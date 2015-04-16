@@ -1,0 +1,11 @@
+.\obj\usbd_user_msc.o: app\usbd_user_msc.c
+.\obj\usbd_user_msc.o: C:\Keil\ARM\ARMCC\bin\..\include\string.h
+.\obj\usbd_user_msc.o: app\DAP_config.h
+.\obj\usbd_user_msc.o: C:\Keil\ARM\Inc\NXP\LPC18xx\LPC18xx.h
+.\obj\usbd_user_msc.o: C:\Keil\ARM\CMSIS\Include\core_cm3.h
+.\obj\usbd_user_msc.o: C:\Keil\ARM\ARMCC\bin\..\include\stdint.h
+.\obj\usbd_user_msc.o: C:\Keil\ARM\CMSIS\Include\core_cmInstr.h
+.\obj\usbd_user_msc.o: C:\Keil\ARM\CMSIS\Include\core_cmFunc.h
+.\obj\usbd_user_msc.o: C:\Keil\ARM\Inc\NXP\LPC18xx\system_LPC18xx.h
+.\obj\usbd_user_msc.o: app\dap.h
+.\obj\usbd_user_msc.o: C:\Keil\ARM\ARMCC\bin\..\include\stddef.h

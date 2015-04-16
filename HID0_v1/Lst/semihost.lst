@@ -1,0 +1,231 @@
+L 1 "app\semihost.c"
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifdef SEMIHOST
+S
+S
+S#include <string.h>
+S
+S#include "tasks.h"
+S#include "main.h"
+S
+S#include "target_reset.h"
+S#include "version.h"
+S#include "swd_host.h"
+S#include "semihost.h"
+S
+S#define RESERVED_FOR_USER_APPLICATIONS  (0x100) /* 0x100 - 0x1ff */
+S#define USR_UID                         (RESERVED_FOR_USER_APPLICATIONS + 1)
+S#define USR_RESET                       (RESERVED_FOR_USER_APPLICATIONS + 2)
+S#define USR_POWERDOWN                   (RESERVED_FOR_USER_APPLICATIONS + 4)
+S#define USR_DISABLEDEBUG                (RESERVED_FOR_USER_APPLICATIONS + 5)
+S#define angel_SWIreason_ReportException (0x18)
+S
+S#define FLAGS_SH_START                  (1)
+S#define FLAGS_SH_STOP                   (2)
+S
+Sstatic OS_TID semihostTask;
+Sstatic OS_SEM semihostStoppedSem;
+Sstatic uint8_t semihostEnabled;
+Sstatic uint32_t r0, r1;
+S
+Sstatic int shReadWord(uint32_t address, uint32_t *ptr) {
+S    return swd_read_memory(address, (uint8_t *)ptr, sizeof(uint32_t));
+S}
+S
+Sstatic int shWriteBytes(uint32_t address, uint8_t *ptr, uint32_t count) {
+S    return swd_write_memory(address, ptr, count);
+S}
+S
+Sstatic int sh_usr_uid(uint32_t *r0, uint32_t r1) {
+S    uint32_t p1, p2;
+S    uint32_t uidSize;
+S    uint32_t i;
+S    uint8_t null = '\0';
+S    uint8_t * id_str;
+S
+S    // Read parameter block
+S    if (!shReadWord(r1, &p1))
+S        return 0;
+S
+S    if (!shReadWord(r1+4, &p2))
+S        return 0;
+S
+S    id_str = get_uid_string();
+S    uidSize = strlen((const char *)id_str) - 4;
+S
+S    // Validate parameters
+S    if (p1 == NULL) return 1;
+S    if (p2 != (uidSize+1)) return 1; // +1 for null string terminator
+S
+S    // skip " $ $ $ length"
+S    id_str += 4;
+S
+S    // Write data to target
+S    for (i = 0; i < uidSize; i++) {
+S        if (!shWriteBytes(p1++, id_str, 1))
+S            return 0;
+S        id_str++;
+S    }
+S    // Write null terminator to target
+S    if (!shWriteBytes(p1, &null, 1))
+S        return 0;
+S
+S    *r0 = 0; // Successful
+S    return 1;
+S}
+S
+Sstatic int sh_usr_reset(uint32_t *r0, uint32_t r1) {
+S    main_reset_target(0);
+S
+S    // Don't restart target as the target will be resetted
+S    return 0;
+S}
+S
+Sstatic int sh_report_exception(uint32_t *r0, uint32_t r1) {
+S    uint32_t p1;
+S
+S    // Read paramter block
+S    if (!shReadWord(r1, &p1)) return 0;
+S
+S    // TODO: r1 does not appear to be set a to a useful value, contrary to the ARM documentation? See:
+S    // DUI0205G_rvct_compiler_and_libraries_guide.pdf 7.4.2 angel_SWIreason_ReportException (0x18)
+S    return 1;
+S}
+S
+S
+Sstatic int sh_usr_powerdown(uint32_t *r0, uint32_t r1) {
+S    main_powerdown_event();
+S
+S    // successful
+S    *r0 = 0;
+S    return 1;
+S}
+S
+Sstatic int sh_usr_disabledebug(uint32_t *r0, uint32_t r1) {
+S    main_disable_debug_event();
+S
+S    // successful
+S    *r0 = 0;
+S    return 1;
+S}
+S
+Sstatic int process_event(void) {
+S    // Returns TRUE if successful, FALSE if an error occurs
+S    uint32_t svc;
+S
+S    svc = r0;
+S
+S    // Set default return value
+S    r0 = 0xffffffff;
+S
+S    switch(svc) {
+S        case USR_UID:
+S            if (!sh_usr_uid(&r0,r1)) return 0;
+S            break;
+S        case USR_RESET:
+S            if (!sh_usr_reset(&r0,r1)) return 0;
+S            break;
+S        case USR_POWERDOWN:
+S            if (!sh_usr_powerdown(&r0,r1)) return 0;
+S            break;
+S        case USR_DISABLEDEBUG:
+S            if (!sh_usr_disabledebug(&r0,r1)) return 0;
+S            break;
+S        case angel_SWIreason_ReportException:
+S            if (!sh_report_exception(&r0,r1)) return 0;
+S            break;
+S        default:
+S            break;
+S    }
+S
+S    return 1;
+S}
+S
+Sstatic void sh_main(void) {
+S    while(1) {
+S        // Wait for start flag
+S        os_evt_wait_or(FLAGS_SH_START, NO_TIMEOUT);
+S
+S        do {
+S            if (swd_is_semihost_event(&r0, &r1)) {
+S                if (process_event()) {
+S                    swd_semihost_restart(r0);
+S                }
+S            } else {
+S                // Wait for 2 scheduler tick; the serial task may run at this point
+S                    os_dly_wait(2);
+S            }
+S        // Loop until stop flag is set
+S        } while (os_evt_wait_or(FLAGS_SH_STOP, 0 )==OS_R_TMO);
+S
+S        // Stopped
+S        os_sem_send(semihostStoppedSem);
+S    }
+S}
+S
+Svoid semihost_init(void) {
+S    // Called from main task
+S
+S    semihostEnabled = 0;
+S    os_sem_init(semihostStoppedSem,0);
+S
+S    // Create semihost task
+S    semihostTask = os_tsk_create(sh_main, SEMIHOST_TASK_PRIORITY);
+S    return;
+S}
+S
+Svoid semihost_enable(void) {
+S    // Called from:
+S    //   - main task when the interface firmware starts
+S    //   - cmsis-dap when a debugger closes the swd port
+S    //   - drag n drop when a binary has been flashed
+S
+S    if (semihostEnabled) return;
+S    if (semihostTask==0) return;
+S
+S    // enable debug
+S    target_set_state(DEBUG);
+S
+S    os_evt_set(FLAGS_SH_START, semihostTask);
+S
+S    semihostEnabled = 1;
+S
+S    return;
+S}
+S
+Svoid semihost_disable(void) {
+S    // Called from:
+S    //   - main task when the the interface receives the POWERDOWN semihost call
+S    //   - cmsis-dap when a debugger opens the swd port
+S    //   - drag n drop when a binary will be flashed
+S
+S    if (!semihostEnabled) return;
+S    if (semihostTask==0) return;
+S
+S    os_evt_set(FLAGS_SH_STOP, semihostTask);
+S
+S    // Wait for semihost task to stop
+S    os_sem_wait(semihostStoppedSem, NO_TIMEOUT);
+S    semihostEnabled = 0;
+S    return;
+S}
+S
+N#else /* #ifndef SEMIHOST */
+Nvoid semihost_init(void) { }
+Nvoid semihost_enable(void) { }
+Nvoid semihost_disable(void){ }
+N#endif

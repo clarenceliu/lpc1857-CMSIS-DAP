@@ -1,0 +1,10 @@
+.\obj\jtag_dp.o: app\JTAG_DP.c
+.\obj\jtag_dp.o: app\DAP_config.h
+.\obj\jtag_dp.o: C:\Keil\ARM\Inc\NXP\LPC18xx\LPC18xx.h
+.\obj\jtag_dp.o: C:\Keil\ARM\CMSIS\Include\core_cm3.h
+.\obj\jtag_dp.o: C:\Keil\ARM\ARMCC\bin\..\include\stdint.h
+.\obj\jtag_dp.o: C:\Keil\ARM\CMSIS\Include\core_cmInstr.h
+.\obj\jtag_dp.o: C:\Keil\ARM\CMSIS\Include\core_cmFunc.h
+.\obj\jtag_dp.o: C:\Keil\ARM\Inc\NXP\LPC18xx\system_LPC18xx.h
+.\obj\jtag_dp.o: app\DAP.h
+.\obj\jtag_dp.o: C:\Keil\ARM\ARMCC\bin\..\include\stddef.h

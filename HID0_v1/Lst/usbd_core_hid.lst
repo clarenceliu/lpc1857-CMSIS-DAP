@@ -1,0 +1,3500 @@
+L 1 "USBStack\SRC\usbd_core_hid.c"
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#include <RTL.h>
+L 1 "C:\Keil\ARM\RV31\INC\RTL.h" 1
+N/*----------------------------------------------------------------------------
+N *      RL-ARM - A P I 
+N *----------------------------------------------------------------------------
+N *      Name:    RTL.H 
+N *      Purpose: Application Programming Interface 
+N *      Rev.:    V4.72
+N *----------------------------------------------------------------------------
+N *      This code is part of the RealView Run-Time Library.
+N *      Copyright (c) 2004-2013 KEIL - An ARM Company. All rights reserved.
+N *---------------------------------------------------------------------------*/
+N
+N#ifndef __RTL_H__
+N#define __RTL_H__
+N
+N/* RL-ARM version number. */
+N#define __RL_ARM_VER    472
+N 
+N#define __task          __declspec(noreturn)
+N#define __used          __attribute__((used))
+N
+N#ifndef NULL
+N #ifdef __cplusplus
+S  #define NULL          0
+N #else
+N  #define NULL          ((void *) 0)
+N #endif
+N#endif
+N
+N#ifndef EOF
+N #define EOF            (-1)
+N#endif
+N
+N#ifndef __size_t
+N #define __size_t       1
+N typedef unsigned int   size_t;
+N#endif
+N
+Ntypedef signed char     S8;
+Ntypedef unsigned char   U8;
+Ntypedef short           S16;
+Ntypedef unsigned short  U16;
+Ntypedef int             S32;
+Ntypedef unsigned int    U32;
+Ntypedef long long       S64;
+Ntypedef unsigned long long U64;
+Ntypedef unsigned char   BIT;
+Ntypedef unsigned int    BOOL;
+N
+N#ifndef __TRUE
+N #define __TRUE         1
+N#endif
+N#ifndef __FALSE
+N #define __FALSE        0
+N#endif
+N
+N#ifdef __BIG_ENDIAN
+S #define U32_LE(v)      (U32)(__rev(v))
+S #define U16_LE(v)      (U16)(__rev(v) >> 16)
+S #define U32_BE(v)      (U32)(v)
+S #define U16_BE(v)      (U16)(v)
+N#else
+N #define U32_BE(v)      (U32)(__rev(v))
+N #define U16_BE(v)      (U16)(__rev(v) >> 16)
+N #define U32_LE(v)      (U32)(v)
+N #define U16_LE(v)      (U16)(v)
+N#endif
+N#define ntohs(v)        U16_BE(v)
+N#define ntohl(v)        U32_BE(v)
+N#define htons(v)        ntohs(v)
+N#define htonl(v)        ntohl(v)
+N
+N/*----------------------------------------------------------------------------
+N *                             RTX Kernel API
+N *---------------------------------------------------------------------------*/
+N
+N#ifdef __cplusplus
+Sextern "C"  {
+N#endif
+N
+N/* Definition of Semaphore type */
+Ntypedef U32 OS_SEM[2];
+N
+N/* Definition of Mailbox type */
+N#define os_mbx_declare(name,cnt)    U32 name [4 + cnt]
+Ntypedef U32 OS_MBX[];
+N
+N/* Definition of Mutex type */
+Ntypedef U32 OS_MUT[3];
+N
+N/* Task Identification number. */
+Ntypedef U32 OS_TID;
+N
+N/* Function return of system calls returning an object identification */
+Ntypedef void *OS_ID;
+N
+N/* Function return of system calls indicating an event or completion state */
+Ntypedef U32 OS_RESULT;
+N
+N/* Return codes */
+N#define OS_R_TMO        0x01
+N#define OS_R_EVT        0x02
+N#define OS_R_SEM        0x03
+N#define OS_R_MBX        0x04
+N#define OS_R_MUT        0x05
+N
+N#define OS_R_OK         0x00
+N#define OS_R_NOK        0xff
+N
+N#define OS_TCB_SIZE     48
+N#define OS_TMR_SIZE     8
+N
+N/* Error Codes */
+N#define OS_ERR_STK_OVF  1
+N#define OS_ERR_FIFO_OVF 2
+N#define OS_ERR_MBX_OVF  3
+N
+N#if !(__TARGET_ARCH_6S_M || __TARGET_ARCH_7_M || __TARGET_ARCH_7E_M)
+X#if !(__TARGET_ARCH_6S_M || 1 || __TARGET_ARCH_7E_M)
+S
+S/*----------------------------------------------------------------------------
+S *      Functions ARM
+S *---------------------------------------------------------------------------*/
+S
+S/* Task Management */
+S#define os_sys_init(tsk)              os_sys_init0(tsk,0,NULL)
+S#define os_sys_init_prio(tsk,prio)    os_sys_init0(tsk,prio,NULL)
+S#define os_sys_init_user(tsk,prio,stk,size)                                   \
+S                                      os_sys_init0(tsk,prio|(size<<8),stk)
+X#define os_sys_init_user(tsk,prio,stk,size)                                                                         os_sys_init0(tsk,prio|(size<<8),stk)
+S#define os_tsk_create(tsk,prio)       os_tsk_create0(tsk,prio,NULL,NULL)
+S#define os_tsk_create_user(tsk,prio,stk,size)                                 \
+S                                      os_tsk_create0(tsk,prio|(size<<8),stk,NULL)
+X#define os_tsk_create_user(tsk,prio,stk,size)                                                                       os_tsk_create0(tsk,prio|(size<<8),stk,NULL)
+S#define os_tsk_create_ex(tsk,prio,argv) os_tsk_create_ex0(tsk,prio,NULL,argv)
+S#define os_tsk_create_user_ex(tsk,prio,stk,size,argv)                         \
+S                                      os_tsk_create_ex0(tsk,prio|(size<<8),stk,argv)
+X#define os_tsk_create_user_ex(tsk,prio,stk,size,argv)                                                               os_tsk_create_ex0(tsk,prio|(size<<8),stk,argv)
+S#define os_tsk_delete_self()          os_tsk_delete(0)
+S#define os_tsk_prio_self(prio)        os_tsk_prio(0,prio)
+S#define isr_tsk_get()                 os_tsk_self()
+S
+Sextern void      os_sys_init0 (void (*task)(void), U32 prio_stksz, void *stk);
+Sextern OS_TID    os_tsk_create0 (void (*task)(void), U32 prio_stksz, 
+S                                 void *stk, void *argv);
+Sextern OS_TID    os_tsk_create_ex0 (void (*task)(void *), U32 prio_stksz, 
+S                                    void *stk, void *argv);
+Sextern OS_TID    os_tsk_self (void);
+Sextern void      os_tsk_pass (void);
+Sextern OS_RESULT os_tsk_prio (OS_TID task_id, U8 new_prio);
+Sextern OS_RESULT os_tsk_delete (OS_TID task_id);
+S
+S/* Event flag Management */
+S#define os_evt_wait_or(wflags,tmo)      os_evt_wait(wflags,tmo,__FALSE)
+S#define os_evt_wait_and(wflags,tmo)     os_evt_wait(wflags,tmo,__TRUE)
+S
+Sextern OS_RESULT os_evt_wait (U16 wait_flags, U16 timeout, BOOL and_wait);
+Sextern void      os_evt_set (U16 event_flags, OS_TID task_id);
+Sextern void      os_evt_clr (U16 clear_flags, OS_TID task_id);
+Sextern void      isr_evt_set (U16 event_flags, OS_TID task_id);
+Sextern U16       os_evt_get (void);
+S
+S/* Semaphore Management */
+Sextern void      os_sem_init (OS_ID semaphore, U16 token_count);
+Sextern OS_RESULT os_sem_send (OS_ID semaphore);
+Sextern OS_RESULT os_sem_wait (OS_ID semaphore, U16 timeout);
+Sextern void      isr_sem_send (OS_ID semaphore);
+S
+S/* Mailbox Management */
+S#define isr_mbx_check(mbx)              os_mbx_check(mbx)
+S
+Sextern void      os_mbx_init (OS_ID mailbox, U16 mbx_size);
+Sextern OS_RESULT os_mbx_send (OS_ID mailbox, void *message_ptr, U16 timeout);
+Sextern OS_RESULT os_mbx_wait (OS_ID mailbox, void  **message, U16 timeout);
+Sextern OS_RESULT os_mbx_check (OS_ID mailbox);
+Sextern void      isr_mbx_send (OS_ID mailbox, void *message_ptr);
+Sextern OS_RESULT isr_mbx_receive (OS_ID mailbox, void **message);
+S
+S/* Mutex Management */
+Sextern void      os_mut_init (OS_ID mutex);
+Sextern OS_RESULT os_mut_release (OS_ID mutex);
+Sextern OS_RESULT os_mut_wait (OS_ID mutex, U16 timeout);
+S
+S/* Time Management */
+Sextern U32       os_time_get (void);
+Sextern void      os_dly_wait (U16 delay_time);
+Sextern void      os_itv_set (U16 interval_time);
+Sextern void      os_itv_wait (void);
+S
+S/* User Timer Management */
+Sextern OS_ID     os_tmr_create (U16 tcnt, U16 info);
+Sextern OS_ID     os_tmr_kill (OS_ID timer);
+S
+S/* System Functions */
+Sextern U32       os_suspend (void);
+Sextern void      os_resume (U32 sleep_time);
+Sextern void      tsk_lock (void) __swi (5);
+Sextern void      tsk_unlock (void);
+S
+S/* Fixed Memory Block Management Functions */
+Sextern int       _init_box (void *box_mem, U32 box_size, U32 blk_size);
+Sextern void     *_alloc_box (void *box_mem) __swi (1);
+Sextern void     *_calloc_box (void *box_mem);
+Sextern int       _free_box (void *box_mem, void *box) __swi (2);
+S
+N#else
+N
+N/*----------------------------------------------------------------------------
+N *      Functions Cortex-M
+N *---------------------------------------------------------------------------*/
+N
+N#define __SVC_0         __svc_indirect(0)
+N
+N/* Task Management */
+Nextern void      os_set_env    (void);
+Nextern void      rt_sys_init   (void (*task)(void), U8 priority, void *stk);
+Nextern void      rt_tsk_pass   (void);
+Nextern OS_TID    rt_tsk_self   (void);
+Nextern OS_RESULT rt_tsk_prio   (OS_TID task_id, U8 new_prio);
+Nextern OS_TID    rt_tsk_create (void (*task)(void), U8 priority, void *stk, void *argv);
+Nextern OS_RESULT rt_tsk_delete (OS_TID task_id);
+N
+N#define os_sys_init(tsk)              os_set_env();                           \
+N                                      _os_sys_init((U32)rt_sys_init,tsk,0,NULL)
+X#define os_sys_init(tsk)              os_set_env();                                                                 _os_sys_init((U32)rt_sys_init,tsk,0,NULL)
+N#define os_sys_init_user(tsk,prio,stk,size)                                   \
+N                                      os_set_env();                           \
+N                                      _os_sys_init((U32)rt_sys_init,tsk,prio|(size<<8),stk)
+X#define os_sys_init_user(tsk,prio,stk,size)                                                                         os_set_env();                                                                 _os_sys_init((U32)rt_sys_init,tsk,prio|(size<<8),stk)
+N#define os_sys_init_prio(tsk,prio)    os_set_env();                           \
+N                                      _os_sys_init((U32)rt_sys_init,tsk,prio,NULL)
+X#define os_sys_init_prio(tsk,prio)    os_set_env();                                                                 _os_sys_init((U32)rt_sys_init,tsk,prio,NULL)
+N#define os_tsk_create(tsk,prio)       _os_tsk_create((U32)rt_tsk_create,tsk,prio,NULL,NULL)
+N#define os_tsk_create_user(tsk,prio,stk,size)                                 \
+N                                      _os_tsk_create((U32)rt_tsk_create,tsk,prio|(size<<8),stk,NULL)
+X#define os_tsk_create_user(tsk,prio,stk,size)                                                                       _os_tsk_create((U32)rt_tsk_create,tsk,prio|(size<<8),stk,NULL)
+N#define os_tsk_create_ex(tsk,prio,argv) _os_tsk_create_ex((U32)rt_tsk_create,tsk,prio,NULL,argv)
+N#define os_tsk_create_user_ex(tsk,prio,stk,size,argv)                         \
+N                                      _os_tsk_create_ex((U32)rt_tsk_create,tsk,prio|(size<<8),stk,argv)
+X#define os_tsk_create_user_ex(tsk,prio,stk,size,argv)                                                               _os_tsk_create_ex((U32)rt_tsk_create,tsk,prio|(size<<8),stk,argv)
+N#define os_tsk_self()                 _os_tsk_self((U32)rt_tsk_self)
+N#define os_tsk_pass()                 _os_tsk_pass((U32)rt_tsk_pass)
+N#define os_tsk_prio(task_id,new_prio) _os_tsk_prio((U32)rt_tsk_prio,task_id,new_prio)
+N#define os_tsk_prio_self(prio)        _os_tsk_prio((U32)rt_tsk_prio,0,prio)
+N#define os_tsk_delete(task_id)        _os_tsk_delete((U32)rt_tsk_delete,task_id)
+N#define os_tsk_delete_self()          _os_tsk_delete((U32)rt_tsk_delete, 0)
+N#define isr_tsk_get()                 rt_tsk_self()
+N
+Nextern void      _os_sys_init(U32 p, void (*task)(void), U32 prio_stksz,
+N                                     void *stk)                        __SVC_0;
+X                                     void *stk)                        __svc_indirect(0);
+Nextern OS_TID    _os_tsk_create (U32 p, void (*task)(void), U32 prio_stksz,
+N                                        void *stk, void *argv)         __SVC_0;
+X                                        void *stk, void *argv)         __svc_indirect(0);
+Nextern OS_TID    _os_tsk_create_ex (U32 p, void (*task)(void *), U32 prio_stksz,
+N                                           void *stk, void *argv)      __SVC_0;
+X                                           void *stk, void *argv)      __svc_indirect(0);
+Nextern OS_TID    _os_tsk_self (U32 p)                                  __SVC_0;
+Xextern OS_TID    _os_tsk_self (U32 p)                                  __svc_indirect(0);
+Nextern void      _os_tsk_pass (U32 p)                                  __SVC_0;
+Xextern void      _os_tsk_pass (U32 p)                                  __svc_indirect(0);
+Nextern OS_RESULT _os_tsk_prio (U32 p, OS_TID task_id, U8 new_prio)     __SVC_0;
+Xextern OS_RESULT _os_tsk_prio (U32 p, OS_TID task_id, U8 new_prio)     __svc_indirect(0);
+Nextern OS_RESULT _os_tsk_delete (U32 p, OS_TID task_id)                __SVC_0;
+Xextern OS_RESULT _os_tsk_delete (U32 p, OS_TID task_id)                __svc_indirect(0);
+N
+N/* Event flag Management */
+Nextern OS_RESULT rt_evt_wait (U16 wait_flags,  U16 timeout, BOOL and_wait);
+Nextern void      rt_evt_set  (U16 event_flags, OS_TID task_id);
+Nextern void      rt_evt_clr  (U16 clear_flags, OS_TID task_id);
+Nextern U16       rt_evt_get  (void);
+N
+N#define os_evt_wait_or(wflags,tmo)    _os_evt_wait((U32)rt_evt_wait,wflags,tmo,__FALSE)
+N#define os_evt_wait_and(wflags,tmo)   _os_evt_wait((U32)rt_evt_wait,wflags,tmo,__TRUE)
+N#define os_evt_set(evt_flags,task_id) _os_evt_set((U32)rt_evt_set,evt_flags,task_id)
+N#define os_evt_clr(clr_flags,task_id) _os_evt_clr((U32)rt_evt_clr,clr_flags,task_id)
+N#define os_evt_get()                  _os_evt_get((U32)rt_evt_get)
+N
+Nextern OS_RESULT _os_evt_wait(U32 p, U16 wait_flags, U16 timeout,
+N                                     BOOL and_wait)                    __SVC_0;
+X                                     BOOL and_wait)                    __svc_indirect(0);
+Nextern void      _os_evt_set (U32 p, U16 event_flags, OS_TID task_id)  __SVC_0;
+Xextern void      _os_evt_set (U32 p, U16 event_flags, OS_TID task_id)  __svc_indirect(0);
+Nextern void      _os_evt_clr (U32 p, U16 clear_flags, OS_TID task_id)  __SVC_0;
+Xextern void      _os_evt_clr (U32 p, U16 clear_flags, OS_TID task_id)  __svc_indirect(0);
+Nextern U16       _os_evt_get (U32 p)                                   __SVC_0;
+Xextern U16       _os_evt_get (U32 p)                                   __svc_indirect(0);
+Nextern void      isr_evt_set (U16 event_flags, OS_TID task_id);
+N
+N/* Semaphore Management */
+Nextern void      rt_sem_init (OS_ID semaphore, U16 token_count);
+Nextern OS_RESULT rt_sem_send (OS_ID semaphore);
+Nextern OS_RESULT rt_sem_wait (OS_ID semaphore, U16 timeout);
+N
+N#define os_sem_init(sem,t_count)     _os_sem_init((U32)rt_sem_init,sem,t_count)
+N#define os_sem_send(sem)             _os_sem_send((U32)rt_sem_send,sem)
+N#define os_sem_wait(sem,tmo)         _os_sem_wait((U32)rt_sem_wait,sem,tmo)
+N
+Nextern void      _os_sem_init (U32 p, OS_ID semaphore, 
+N                                      U16 token_count)                 __SVC_0;
+X                                      U16 token_count)                 __svc_indirect(0);
+Nextern OS_RESULT _os_sem_send (U32 p, OS_ID semaphore)                 __SVC_0;
+Xextern OS_RESULT _os_sem_send (U32 p, OS_ID semaphore)                 __svc_indirect(0);
+Nextern OS_RESULT _os_sem_wait (U32 p, OS_ID semaphore, U16 timeout)    __SVC_0;
+Xextern OS_RESULT _os_sem_wait (U32 p, OS_ID semaphore, U16 timeout)    __svc_indirect(0);
+Nextern void      isr_sem_send (OS_ID semaphore);
+N
+N/* Mailbox Management */
+Nextern void      rt_mbx_init  (OS_ID mailbox, U16 mbx_size);
+Nextern OS_RESULT rt_mbx_send  (OS_ID mailbox, void *p_msg,    U16 timeout);
+Nextern OS_RESULT rt_mbx_wait  (OS_ID mailbox, void **message, U16 timeout);
+Nextern OS_RESULT rt_mbx_check (OS_ID mailbox);
+N
+N#define os_mbx_init(mbx,mbx_size)     _os_mbx_init((U32)rt_mbx_init,mbx,mbx_size)
+N#define os_mbx_send(mbx,p_msg,tmo)    _os_mbx_send((U32)rt_mbx_send,mbx,p_msg,tmo)
+N#define os_mbx_wait(mbx,message,tmo)  _os_mbx_wait((U32)rt_mbx_wait,mbx,message,tmo)
+N#define os_mbx_check(mbx)             _os_mbx_check((U32)rt_mbx_check,mbx)
+N#define isr_mbx_check(mbx)            rt_mbx_check(mbx)
+N
+Nextern void      _os_mbx_init (U32 p, OS_ID mailbox, U16 mbx_size)     __SVC_0;
+Xextern void      _os_mbx_init (U32 p, OS_ID mailbox, U16 mbx_size)     __svc_indirect(0);
+Nextern OS_RESULT _os_mbx_send (U32 p, OS_ID mailbox, void *message_ptr,
+N                                      U16 timeout)                     __SVC_0;
+X                                      U16 timeout)                     __svc_indirect(0);
+Nextern OS_RESULT _os_mbx_wait (U32 p, OS_ID mailbox, void  **message,
+N                                      U16 timeout)                     __SVC_0;
+X                                      U16 timeout)                     __svc_indirect(0);
+Nextern OS_RESULT _os_mbx_check (U32 p, OS_ID mailbox)                  __SVC_0;
+Xextern OS_RESULT _os_mbx_check (U32 p, OS_ID mailbox)                  __svc_indirect(0);
+Nextern void      isr_mbx_send (OS_ID mailbox, void *message_ptr);
+Nextern OS_RESULT isr_mbx_receive (OS_ID mailbox, void **message);
+N
+N/* Mutex Management */
+Nextern void      rt_mut_init    (OS_ID mutex);
+Nextern OS_RESULT rt_mut_release (OS_ID mutex);
+Nextern OS_RESULT rt_mut_wait    (OS_ID mutex, U16 timeout);
+N
+N#define os_mut_init(mutex)         _os_mut_init((U32)rt_mut_init,mutex)
+N#define os_mut_release(mutex)      _os_mut_release((U32)rt_mut_release,mutex)
+N#define os_mut_wait(mutex,timeout) _os_mut_wait((U32)rt_mut_wait,mutex,timeout)
+N
+Nextern void      _os_mut_init (U32 p, OS_ID mutex)                     __SVC_0;
+Xextern void      _os_mut_init (U32 p, OS_ID mutex)                     __svc_indirect(0);
+Nextern OS_RESULT _os_mut_release (U32 p, OS_ID mutex)                  __SVC_0;
+Xextern OS_RESULT _os_mut_release (U32 p, OS_ID mutex)                  __svc_indirect(0);
+Nextern OS_RESULT _os_mut_wait (U32 p, OS_ID mutex, U16 timeout)        __SVC_0;
+Xextern OS_RESULT _os_mut_wait (U32 p, OS_ID mutex, U16 timeout)        __svc_indirect(0);
+N
+N/* Time Management */
+Nextern U32       rt_time_get (void);
+Nextern void      rt_dly_wait (U16 delay_time);
+Nextern void      rt_itv_set  (U16 interval_time);
+Nextern void      rt_itv_wait (void);
+N
+N#define os_time_get()              _os_time_get((U32)rt_time_get)
+N#define os_dly_wait(delay_time)    _os_dly_wait((U32)rt_dly_wait,delay_time)
+N#define os_itv_set(interval_time)  _os_itv_set((U32)rt_itv_set,interval_time)
+N#define os_itv_wait()              _os_itv_wait((U32)rt_itv_wait)
+N
+Nextern U32       _os_time_get (U32 p)                                  __SVC_0;
+Xextern U32       _os_time_get (U32 p)                                  __svc_indirect(0);
+Nextern void      _os_dly_wait (U32 p, U16 delay_time)                  __SVC_0;
+Xextern void      _os_dly_wait (U32 p, U16 delay_time)                  __svc_indirect(0);
+Nextern void      _os_itv_set (U32 p, U16 interval_time)                __SVC_0;
+Xextern void      _os_itv_set (U32 p, U16 interval_time)                __svc_indirect(0);
+Nextern void      _os_itv_wait (U32 p)                                  __SVC_0;
+Xextern void      _os_itv_wait (U32 p)                                  __svc_indirect(0);
+N
+N/* User Timer Management */
+Nextern OS_ID     rt_tmr_create (U16 tcnt, U16 info);
+Nextern OS_ID     rt_tmr_kill   (OS_ID timer);
+N
+N#define os_tmr_create(tcnt,info)   _os_tmr_create((U32)rt_tmr_create,tcnt,info)
+N#define os_tmr_kill(timer)         _os_tmr_kill((U32)rt_tmr_kill,timer)
+N
+Nextern OS_ID     _os_tmr_create (U32 p, U16 tcnt, U16 info)            __SVC_0;
+Xextern OS_ID     _os_tmr_create (U32 p, U16 tcnt, U16 info)            __svc_indirect(0);
+Nextern OS_ID     _os_tmr_kill (U32 p, OS_ID timer)                     __SVC_0;
+Xextern OS_ID     _os_tmr_kill (U32 p, OS_ID timer)                     __svc_indirect(0);
+N
+N/* System Functions */
+Nextern U32       rt_suspend    (void);
+Nextern void      rt_resume     (U32 sleep_time);
+Nextern void      rt_tsk_lock   (void);
+Nextern void      rt_tsk_unlock (void);
+N
+N#define os_suspend()               _os_suspend((U32)rt_suspend)
+N#define os_resume(sleep_time)      _os_resume((U32)rt_resume,sleep_time)
+N#define tsk_lock()                 _os_tsk_lock((U32)rt_tsk_lock)
+N#define tsk_unlock()               _os_tsk_unlock((U32)rt_tsk_unlock)
+N
+Nextern U32       _os_suspend (U32 p)                                   __SVC_0;
+Xextern U32       _os_suspend (U32 p)                                   __svc_indirect(0);
+Nextern void      _os_resume (U32 p, U32 sleep_time)                    __SVC_0;
+Xextern void      _os_resume (U32 p, U32 sleep_time)                    __svc_indirect(0);
+Nextern void      _os_tsk_lock (U32 p)                                  __SVC_0;
+Xextern void      _os_tsk_lock (U32 p)                                  __svc_indirect(0);
+Nextern void      _os_tsk_unlock (U32 p)                                __SVC_0;
+Xextern void      _os_tsk_unlock (U32 p)                                __svc_indirect(0);
+N
+N/* Fixed Memory Block Management Functions */
+Nextern int       _init_box (void *box_mem, U32 box_size, U32 blk_size);
+Nextern void     *_alloc_box (void *box_mem);
+Nextern void     *_calloc_box (void *box_mem);
+Nextern int       _free_box (void *box_mem, void *box);
+N
+N#endif
+N
+N#define BOX_ALIGN_8     0x80000000
+N#define _declare_box(pool,size,cnt)   U32 pool[(((size)+3)/4)*(cnt) + 3]
+N#define _declare_box8(pool,size,cnt)  U64 pool[(((size)+7)/8)*(cnt) + 2]
+N#define _init_box8(pool,size,bsize)   _init_box (pool,size,bsize | BOX_ALIGN_8)
+N
+N/* For compatibility with older configurations.*/
+N#define os_stk_overflow         os_error
+N
+N/*----------------------------------------------------------------------------
+N *                        Flash File System API
+N *---------------------------------------------------------------------------*/
+N
+Ntypedef struct {                        /* RL Time format (FFS, TCPnet)      */
+N  U8  hr;                               /* Hours    [0..23]                  */
+N  U8  min;                              /* Minutes  [0..59]                  */
+N  U8  sec;                              /* Seconds  [0..59]                  */
+N  U8  day;                              /* Day      [1..31]                  */
+N  U8  mon;                              /* Month    [1..12]                  */
+N  U16 year;                             /* Year     [1980..2107]             */
+N} RL_TIME;
+N
+Ntypedef struct {                        /* Search info record                */
+N  S8  name[256];                        /* Name                              */
+N  U32 size;                             /* File size in bytes                */
+N  U16 fileID;                           /* System Identification             */
+N  U8  attrib;                           /* Attributes                        */
+N  RL_TIME time;                         /* Create/Modify Time                */
+N} FINFO;
+N
+Nextern int finit (const char *drive);
+Nextern int funinit (const char *drive);
+Nextern int fdelete (const char *filename);
+Nextern int frename (const char *oldname, const char *newname);
+Nextern int ffind (const char *pattern, FINFO *info);
+Nextern U64 ffree (const char *drive);
+Nextern int fformat (const char *drive);
+Nextern int fanalyse (const char *drive);
+Nextern int fcheck (const char *drive);
+Nextern int fdefrag (const char *drive);
+Nextern int fattrib (const char *par, const char *path);
+Nextern int fvol    (const char *drive, char *buf);
+N
+N/* The following macros provide for common functions */
+N#define unlink(fn)      fdelete(fn);
+N
+N/*----------------------------------------------------------------------------
+N *                             TCPnet API
+N *---------------------------------------------------------------------------*/
+N
+N/* UDP Options */
+N#define UDP_OPT_SEND_CS    0x01   /* Calculate Checksum for UDP send frames  */
+N#define UDP_OPT_CHK_CS     0x02   /* Verify Checksum for received UDP frames */
+N
+N/* TCP Socket Types */
+N#define TCP_TYPE_SERVER    0x01   /* Socket Type Server (open for listening) */
+N#define TCP_TYPE_CLIENT    0x02   /* Socket Type Client (initiate connect)   */
+N#define TCP_TYPE_DELAY_ACK 0x04   /* Socket Type Delayed Acknowledge         */
+N#define TCP_TYPE_FLOW_CTRL 0x08   /* Socket Type Flow Control                */
+N#define TCP_TYPE_KEEP_ALIVE 0x10  /* Socket Type Keep Alive                  */
+N#define TCP_TYPE_CLIENT_SERVER (TCP_TYPE_SERVER | TCP_TYPE_CLIENT)
+N
+N/* TCP Callback Events */
+N#define TCP_EVT_CONREQ     0      /* Connect request received event          */
+N#define TCP_EVT_CONNECT    1      /* Connection established event            */
+N#define TCP_EVT_CLOSE      2      /* Connection was properly closed          */
+N#define TCP_EVT_ABORT      3      /* Connection is for some reason aborted   */
+N#define TCP_EVT_ACK        4      /* Previously send data acknowledged       */
+N#define TCP_EVT_DATA       5      /* Data received event                     */
+N
+N/* TCP States */
+N#define TCP_STATE_FREE     0      /* Entry is free and unused                */
+N#define TCP_STATE_CLOSED   1      /* Entry allocated, socket still closed    */
+N#define TCP_STATE_LISTEN   2      /* Socket waiting for incoming connection  */
+N#define TCP_STATE_SYN_REC  3      /* SYN frame received                      */
+N#define TCP_STATE_SYN_SENT 4      /* SYN packet sent to establish a connect. */
+N#define TCP_STATE_FINW1    5      /* Tcp_close started FIN packet was sent   */
+N#define TCP_STATE_FINW2    6      /* Our FIN ack-ed, waiting for remote FIN  */
+N#define TCP_STATE_CLOSING  7      /* Received FIN independently of our FIN   */
+N#define TCP_STATE_LAST_ACK 8      /* Waiting for last ACK for our FIN        */
+N#define TCP_STATE_TWAIT    9      /* Timed waiting for 2MSL                  */
+N#define TCP_STATE_CONNECT  10     /* TCP Connection established              */
+N
+N/* BSD Socket Address Family */
+N#define AF_UNSPEC          0      /* Unspecified                             */
+N#define AF_INET            1      /* Internet Address Family (UDP, TCP)      */
+N#define AF_NETBIOS         2      /* NetBios-style addresses                 */
+N
+N/* BSD Protocol families, same as address families */
+N#define PF_UNSPEC          AF_UNSPEC
+N#define PF_INET            AF_INET
+N#define PF_NETBIOS         AF_NETBIOS
+N
+N/* BSD Socket Type */
+N#define SOCK_STREAM        1      /* Stream Socket (Connection oriented)     */
+N#define SOCK_DGRAM         2      /* Datagram Socket (Connectionless)        */
+N
+N/* BSD Socket Protocol */
+N#define IPPROTO_TCP        1      /* TCP Protocol                            */
+N#define IPPROTO_UDP        2      /* UDP Protocol                            */
+N
+N/* BSD Internet Addresses */
+N#define INADDR_ANY     0x00000000 /* All IP addresses accepted               */
+N#define INADDR_NONE    0xffffffff /* No IP address accepted                  */
+N
+N/* BSD Socket Return values */
+N#define SCK_SUCCESS         0     /* Success                                 */
+N#define SCK_ERROR         (-1)    /* General Error                           */
+N#define SCK_EINVALID      (-2)    /* Invalid socket descriptor               */
+N#define SCK_EINVALIDPARA  (-3)    /* Invalid parameter                       */
+N#define SCK_EWOULDBLOCK   (-4)    /* It would have blocked.                  */
+N#define SCK_EMEMNOTAVAIL  (-5)    /* Not enough memory in memory pool        */
+N#define SCK_ECLOSED       (-6)    /* Connection is closed or aborted         */
+N#define SCK_ELOCKED       (-7)    /* Socket is locked in RTX environment     */
+N#define SCK_ETIMEOUT      (-8)    /* Socket, Host Resolver timeout           */
+N#define SCK_EINPROGRESS   (-9)    /* Host Name resolving in progress         */
+N#define SCK_ENONAME       (-10)   /* Host Name not existing                  */
+N
+N/* BSD Socket flags parameter */
+N#define MSG_DONTWAIT       0x01   /* Enables non-blocking operation          */
+N#define MSG_PEEK           0x02   /* Peeks at the incoming data              */
+N
+N/* BSD Socket ioctl commands */
+N#define FIONBIO            1      /* Set mode (blocking/non-blocking)        */
+N#define FIO_DELAY_ACK      2      /* Set DELAY_ACK mode for stream socket    */
+N#define FIO_KEEP_ALIVE     3      /* Set KEEP_ALIVE mode for stream socket   */
+N#define FIO_FLOW_CTRL      4      /* Set FLOW_CTRL mode for stream socket    */
+N
+N/* ICMP (ping) Callback Events */
+N#define ICMP_EVT_SUCCESS   0      /* Pinged Host responded                   */
+N#define ICMP_EVT_TIMEOUT   1      /* Timeout, no ping response received      */
+N
+N/* DNS Client Callback Events */
+N#define DNS_EVT_SUCCESS    0      /* Host name successfully resolved         */
+N#define DNS_EVT_NONAME     1      /* DNS Error, no such name                 */
+N#define DNS_EVT_TIMEOUT    2      /* Timeout resolving host                  */
+N#define DNS_EVT_ERROR      3      /* Erroneous response packet               */
+N
+N/* DNS 'get_host_by_name()' result codes */
+N#define DNS_RES_OK         0      /* Resolver successfully started           */
+N#define DNS_ERROR_BUSY     1      /* Resolver busy, can't process request    */
+N#define DNS_ERROR_LABEL    2      /* Label in Hostname not valid             */
+N#define DNS_ERROR_NAME     3      /* Entire Hostname not valid               */
+N#define DNS_ERROR_NOSRV    4      /* Prim. DNS server not specified (0.0.0.0)*/
+N#define DNS_ERROR_PARAM    5      /* Invalid parameter                       */
+N
+N/* SMTP Client Callback Events */
+N#define SMTP_EVT_SUCCESS   0      /* Email successfully sent                 */
+N#define SMTP_EVT_TIMEOUT   1      /* Timeout sending email                   */
+N#define SMTP_EVT_ERROR     2      /* Error when sending email                */
+N
+N/* FTP Client Commands */
+N#define FTPC_CMD_PUT       0      /* Puts a file on FTP server               */
+N#define FTPC_CMD_GET       1      /* Retrieves a file from FTP server        */
+N#define FTPC_CMD_APPEND    2      /* Append file on FTP server (with create) */
+N#define FTPC_CMD_DELETE    3      /* Deletes a file on FTP server            */
+N#define FTPC_CMD_LIST      4      /* Lists files stored on FTP server        */
+N#define FTPC_CMD_RENAME    5      /* Renames a file on FTP server            */
+N#define FTPC_CMD_MKDIR     6      /* Makes a directory on FTP server         */
+N#define FTPC_CMD_RMDIR     7      /* Removes an empty directory on FTP server*/
+N#define FTPC_CMD_NLIST     8      /* Lists file names only (short format)    */
+N
+N/* FTP Client Callback Events */
+N#define FTPC_EVT_SUCCESS   0      /* File operation successful               */
+N#define FTPC_EVT_TIMEOUT   1      /* Timeout on file operation               */
+N#define FTPC_EVT_LOGINFAIL 2      /* Login error, username/passw invalid     */
+N#define FTPC_EVT_NOACCESS  3      /* File access not allowed                 */
+N#define FTPC_EVT_NOTFOUND  4      /* File not found                          */
+N#define FTPC_EVT_NOPATH    5      /* Working directory path not found        */
+N#define FTPC_EVT_ERRLOCAL  6      /* Local file open error                   */
+N#define FTPC_EVT_ERROR     7      /* Generic FTP client error                */
+N
+N/* TFTP Client Callback Events */
+N#define TFTPC_EVT_SUCCESS  0      /* File operation successful               */
+N#define TFTPC_EVT_TIMEOUT  1      /* Timeout on file operation               */
+N#define TFTPC_EVT_NOACCESS 2      /* File access not allowed                 */
+N#define TFTPC_EVT_NOTFOUND 3      /* File not found                          */
+N#define TFTPC_EVT_DISKFULL 4      /* Disk full (local or remote)             */
+N#define TFTPC_EVT_ERROR    5      /* Generic TFTP client error               */
+N
+N/* FTP Server Notification events */
+N#define FTP_EVT_LOGIN      0      /* User logged in, session is busy         */
+N#define FTP_EVT_LOGOUT     1      /* User logged out, session is idle        */
+N#define FTP_EVT_LOGFAIL    2      /* User login failed (invalid credentials) */
+N#define FTP_EVT_DOWNLOAD   3      /* File download ended                     */
+N#define FTP_EVT_UPLOAD     4      /* File upload ended                       */
+N#define FTP_EVT_DELETE     5      /* File deleted                            */
+N#define FTP_EVT_RENAME     6      /* File or directory renamed               */
+N#define FTP_EVT_MKDIR      7      /* Directory created                       */
+N#define FTP_EVT_RMDIR      8      /* Directory removed                       */
+N#define FTP_EVT_ERRLOCAL   9      /* Local file operation error              */
+N#define FTP_EVT_DENIED     10     /* Requested file operation denied         */
+N#define FTP_EVT_ERROR      11     /* Generic file operation error            */
+N
+N/* ARP Cache Entry types */
+N#define ARP_FIXED_IP       0      /* Fixed IP adrs is refreshed after tout   */
+N#define ARP_TEMP_IP        1      /* Temp adrs is removed after timeout      */
+N
+N/* BSD Socket typedef's */
+Ntypedef struct sockaddr {         /* << Generic Socket Address structure >>  */
+N  U16  sa_family;                 /* Address family                          */
+N  char sa_data[14];               /* Direct address (up to 14 bytes)         */
+N} SOCKADDR;
+N
+N#pragma push
+N#pragma anon_unions
+N
+Ntypedef struct in_addr {          /* << Generic IPv4 Address structure >>    */
+N  union {
+N    struct {
+N      U8 s_b1,s_b2,s_b3,s_b4;     /* IP address, byte access                 */
+N    };
+N    struct {
+N      U16 s_w1,s_w2;              /* IP address, short int access            */
+N    };
+N    U32 s_addr;                   /* IP address in network byte order        */
+N  };
+N} IN_ADDR;
+N#pragma pop
+N
+Ntypedef struct sockaddr_in {      /* << IPv4 Socket Address structure >>     */
+N  S16 sin_family;                 /* Socket domain                           */
+N  U16 sin_port;                   /* Port                                    */
+N  IN_ADDR sin_addr;               /* IP address                              */
+N  S8  sin_zero[8];                /* reserved                                */
+N} SOCKADDR_IN;
+N
+Ntypedef struct hostent {          /* << BSD Host Entry structure >>          */
+N  char *h_name;                   /* Official name of host                   */
+N  char **h_aliases;               /* Pointer to an array of alias names      */
+N  S16  h_addrtype;                /* Address Type: AF_INET, AF_NETBIOS       */
+N  S16  h_length;                  /* Length of address in bytes              */
+N  char **h_addr_list;             /* Pointer to an array of IPv4 addresses   */
+N} HOSTENT;
+N
+Nextern void init_TcpNet (void);
+Nextern BOOL main_TcpNet (void);
+Nextern void timer_tick (void);
+Nextern U8   udp_get_socket (U8 tos, U8 opt, 
+N                            U16 (*listener)(U8 socket, U8 *remip, U16 port, U8 *buf, U16 len));
+Nextern BOOL udp_release_socket (U8 socket);
+Nextern BOOL udp_open (U8 socket, U16 locport);
+Nextern BOOL udp_close (U8 socket);
+Nextern BOOL udp_mcast_ttl (U8 socket, U8 ttl);
+Nextern U8  *udp_get_buf (U16 size);
+Nextern BOOL udp_send (U8 socket, U8 *remip, U16 remport, U8 *buf, U16 dlen);
+Nextern U8   tcp_get_socket (U8 type, U8 tos, U16 tout,
+N                            U16 (*listener)(U8 socket, U8 event, U8 *buf, U16 len));
+Nextern BOOL tcp_release_socket (U8 socket);
+Nextern BOOL tcp_listen (U8 socket, U16 locport);
+Nextern BOOL tcp_connect (U8 socket, U8 *remip, U16 remport, U16 locport);
+Nextern U8  *tcp_get_buf (U16 size);
+Nextern U16  tcp_max_dsize (U8 socket);
+Nextern BOOL tcp_check_send (U8 socket);
+Nextern U8   tcp_get_state (U8 socket);
+Nextern BOOL tcp_send (U8 socket, U8 *buf, U16 dlen);
+Nextern BOOL tcp_close (U8 socket);
+Nextern BOOL tcp_abort (U8 socket);
+Nextern void tcp_reset_window (U8 socket);
+Nextern BOOL arp_cache_ip (U8 *ipadr, U8 type);
+Nextern BOOL arp_cache_mac (U8 *hwadr);
+Nextern void ppp_listen (const char *user, const char *passw);
+Nextern void ppp_connect (const char *dialnum, const char *user, const char *passw);
+Nextern void ppp_close (void);
+Nextern BOOL ppp_is_up (void);
+Nextern void slip_listen (void);
+Nextern void slip_connect (const char *dialnum);
+Nextern void slip_close (void);
+Nextern BOOL slip_is_up (void);
+Nextern U8   get_host_by_name (U8 *hostn, void (*cbfunc)(U8 event, U8 *host_ip));
+Nextern BOOL smtp_connect (U8 *ipadr, U16 port, void (*cbfunc)(U8 event));
+Nextern void dhcp_disable (void);
+Nextern BOOL igmp_join (U8 *group_ip);
+Nextern BOOL igmp_leave (U8 *group_ip);
+Nextern BOOL snmp_trap (U8 *manager_ip, U8 gen_trap, U8 spec_trap, U16 *obj_list);
+Nextern BOOL snmp_set_community (const char *community);
+Nextern BOOL icmp_ping (U8 *remip, void (*cbfunc)(U8 event));
+Nextern BOOL ftpc_connect (U8 *ipadr, U16 port, U8 command, void (*cbfunc)(U8 event));
+Nextern BOOL tftpc_put (U8 *ipadr, U16 port,
+N                       const char *src, const char *dst, void (*cbfunc)(U8 event));
+Nextern BOOL tftpc_get (U8 *ipadr, U16 port, 
+N                       const char *src, const char *dst, void (*cbfunc)(U8 event));
+Nextern BOOL sntp_get_time (U8 *ipadr, void (*cbfunc)(U32 utc_time));
+Nextern void ftp_evt_notify (U8 evt);
+N
+N/* BSD Socket API */
+Nextern int  socket (int family, int type, int protocol);
+Nextern int  bind (int sock, const SOCKADDR *addr, int addrlen);
+Nextern int  listen (int sock, int backlog);
+Nextern int  accept (int sock, SOCKADDR *addr, int *addrlen);
+Nextern int  connect (int sock, SOCKADDR *addr, int addrlen);
+Nextern int  send (int sock, const char *buf, int len, int flags);
+Nextern int  sendto (int sock, const char *buf, int len, int flags, SOCKADDR *to, int tolen);
+Nextern int  recv (int sock, char *buf, int len, int flags);
+Nextern int  recvfrom (int sock, char *buf, int len, int flags, SOCKADDR *from, int *fromlen);
+Nextern int  closesocket (int sock);
+Nextern int  getpeername (int sock, SOCKADDR *name, int *namelen);
+Nextern int  getsockname (int sock, SOCKADDR *name, int *namelen);
+Nextern int  ioctlsocket (int sock, long cmd, unsigned long *argp);
+Nextern HOSTENT *gethostbyname (const char *name, int *err);
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N/*----------------------------------------------------------------------------
+N * end of file
+N *---------------------------------------------------------------------------*/
+N
+N#endif
+N 
+L 17 "USBStack\SRC\usbd_core_hid.c" 2
+N#include <rl_usb.h>
+L 1 ".\USBStack\INC\rl_usb.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __RL_USB_H__
+N#define __RL_USB_H__
+N
+N#ifdef __cplusplus
+Sextern "C"  {
+N#endif
+N
+N#include <stdint.h>
+L 1 "C:\Keil\ARM\ARMCC\bin\..\include\stdint.h" 1
+N/* Copyright (C) ARM Ltd., 1999 */
+N/* All rights reserved */
+N
+N/*
+N * RCS $Revision: 178085 $
+N * Checkin $Date: 2012-12-11 14:54:17 +0000 (Tue, 11 Dec 2012) $
+N * Revising $Author: agrant $
+N */
+N
+N#ifndef __stdint_h
+N#define __stdint_h
+N#define __ARMCLIB_VERSION 5030076
+N
+N  #ifndef __STDINT_DECLS
+N  #define __STDINT_DECLS
+N
+N    #undef __CLIBNS
+N
+N    #ifdef __cplusplus
+S      namespace std {
+S          #define __CLIBNS std::
+S          extern "C" {
+N    #else
+N      #define __CLIBNS
+N    #endif  /* __cplusplus */
+N
+N
+N/*
+N * 'signed' is redundant below, except for 'signed char' and if
+N * the typedef is used to declare a bitfield.
+N * '__int64' is used instead of 'long long' so that this header
+N * can be used in --strict mode.
+N */
+N
+N    /* 7.18.1.1 */
+N
+N    /* exact-width signed integer types */
+Ntypedef   signed          char int8_t;
+Ntypedef   signed short     int int16_t;
+Ntypedef   signed           int int32_t;
+Ntypedef   signed       __int64 int64_t;
+N
+N    /* exact-width unsigned integer types */
+Ntypedef unsigned          char uint8_t;
+Ntypedef unsigned short     int uint16_t;
+Ntypedef unsigned           int uint32_t;
+Ntypedef unsigned       __int64 uint64_t;
+N
+N    /* 7.18.1.2 */
+N
+N    /* smallest type of at least n bits */
+N    /* minimum-width signed integer types */
+Ntypedef   signed          char int_least8_t;
+Ntypedef   signed short     int int_least16_t;
+Ntypedef   signed           int int_least32_t;
+Ntypedef   signed       __int64 int_least64_t;
+N
+N    /* minimum-width unsigned integer types */
+Ntypedef unsigned          char uint_least8_t;
+Ntypedef unsigned short     int uint_least16_t;
+Ntypedef unsigned           int uint_least32_t;
+Ntypedef unsigned       __int64 uint_least64_t;
+N
+N    /* 7.18.1.3 */
+N
+N    /* fastest minimum-width signed integer types */
+Ntypedef   signed           int int_fast8_t;
+Ntypedef   signed           int int_fast16_t;
+Ntypedef   signed           int int_fast32_t;
+Ntypedef   signed       __int64 int_fast64_t;
+N
+N    /* fastest minimum-width unsigned integer types */
+Ntypedef unsigned           int uint_fast8_t;
+Ntypedef unsigned           int uint_fast16_t;
+Ntypedef unsigned           int uint_fast32_t;
+Ntypedef unsigned       __int64 uint_fast64_t;
+N
+N    /* 7.18.1.4 integer types capable of holding object pointers */
+Ntypedef   signed           int intptr_t;
+Ntypedef unsigned           int uintptr_t;
+N
+N    /* 7.18.1.5 greatest-width integer types */
+Ntypedef   signed       __int64 intmax_t;
+Ntypedef unsigned       __int64 uintmax_t;
+N
+N
+N#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
+X#if !0L || 0L
+N
+N    /* 7.18.2.1 */
+N
+N    /* minimum values of exact-width signed integer types */
+N#define INT8_MIN                   -128
+N#define INT16_MIN                -32768
+N#define INT32_MIN          (~0x7fffffff)   /* -2147483648 is unsigned */
+N#define INT64_MIN  __ESCAPE__(~0x7fffffffffffffffll) /* -9223372036854775808 is unsigned */
+N
+N    /* maximum values of exact-width signed integer types */
+N#define INT8_MAX                    127
+N#define INT16_MAX                 32767
+N#define INT32_MAX            2147483647
+N#define INT64_MAX  __ESCAPE__(9223372036854775807ll)
+N
+N    /* maximum values of exact-width unsigned integer types */
+N#define UINT8_MAX                   255
+N#define UINT16_MAX                65535
+N#define UINT32_MAX           4294967295u
+N#define UINT64_MAX __ESCAPE__(18446744073709551615ull)
+N
+N    /* 7.18.2.2 */
+N
+N    /* minimum values of minimum-width signed integer types */
+N#define INT_LEAST8_MIN                   -128
+N#define INT_LEAST16_MIN                -32768
+N#define INT_LEAST32_MIN          (~0x7fffffff)
+N#define INT_LEAST64_MIN  __ESCAPE__(~0x7fffffffffffffffll)
+N
+N    /* maximum values of minimum-width signed integer types */
+N#define INT_LEAST8_MAX                    127
+N#define INT_LEAST16_MAX                 32767
+N#define INT_LEAST32_MAX            2147483647
+N#define INT_LEAST64_MAX  __ESCAPE__(9223372036854775807ll)
+N
+N    /* maximum values of minimum-width unsigned integer types */
+N#define UINT_LEAST8_MAX                   255
+N#define UINT_LEAST16_MAX                65535
+N#define UINT_LEAST32_MAX           4294967295u
+N#define UINT_LEAST64_MAX __ESCAPE__(18446744073709551615ull)
+N
+N    /* 7.18.2.3 */
+N
+N    /* minimum values of fastest minimum-width signed integer types */
+N#define INT_FAST8_MIN           (~0x7fffffff)
+N#define INT_FAST16_MIN          (~0x7fffffff)
+N#define INT_FAST32_MIN          (~0x7fffffff)
+N#define INT_FAST64_MIN  __ESCAPE__(~0x7fffffffffffffffll)
+N
+N    /* maximum values of fastest minimum-width signed integer types */
+N#define INT_FAST8_MAX             2147483647
+N#define INT_FAST16_MAX            2147483647
+N#define INT_FAST32_MAX            2147483647
+N#define INT_FAST64_MAX  __ESCAPE__(9223372036854775807ll)
+N
+N    /* maximum values of fastest minimum-width unsigned integer types */
+N#define UINT_FAST8_MAX            4294967295u
+N#define UINT_FAST16_MAX           4294967295u
+N#define UINT_FAST32_MAX           4294967295u
+N#define UINT_FAST64_MAX __ESCAPE__(18446744073709551615ull)
+N
+N    /* 7.18.2.4 */
+N
+N    /* minimum value of pointer-holding signed integer type */
+N#define INTPTR_MIN (~0x7fffffff)
+N
+N    /* maximum value of pointer-holding signed integer type */
+N#define INTPTR_MAX   2147483647
+N
+N    /* maximum value of pointer-holding unsigned integer type */
+N#define UINTPTR_MAX  4294967295u
+N
+N    /* 7.18.2.5 */
+N
+N    /* minimum value of greatest-width signed integer type */
+N#define INTMAX_MIN  __ESCAPE__(~0x7fffffffffffffffll)
+N
+N    /* maximum value of greatest-width signed integer type */
+N#define INTMAX_MAX  __ESCAPE__(9223372036854775807ll)
+N
+N    /* maximum value of greatest-width unsigned integer type */
+N#define UINTMAX_MAX __ESCAPE__(18446744073709551615ull)
+N
+N    /* 7.18.3 */
+N
+N    /* limits of ptrdiff_t */
+N#define PTRDIFF_MIN (~0x7fffffff)
+N#define PTRDIFF_MAX   2147483647
+N
+N    /* limits of sig_atomic_t */
+N#define SIG_ATOMIC_MIN (~0x7fffffff)
+N#define SIG_ATOMIC_MAX   2147483647
+N
+N    /* limit of size_t */
+N#define SIZE_MAX 4294967295u
+N
+N    /* limits of wchar_t */
+N    /* NB we have to undef and redef because they're defined in both
+N     * stdint.h and wchar.h */
+N#undef WCHAR_MIN
+N#undef WCHAR_MAX
+N
+N#if defined(__WCHAR32)
+X#if 0L
+S  #define WCHAR_MIN   0
+S  #define WCHAR_MAX   0xffffffffU
+N#else
+N  #define WCHAR_MIN   0
+N  #define WCHAR_MAX   65535
+N#endif
+N
+N    /* limits of wint_t */
+N#define WINT_MIN (~0x7fffffff)
+N#define WINT_MAX 2147483647
+N
+N#endif /* __STDC_LIMIT_MACROS */
+N
+N#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
+X#if !0L || 0L
+N
+N    /* 7.18.4.1 macros for minimum-width integer constants */
+N#define INT8_C(x)   (x)
+N#define INT16_C(x)  (x)
+N#define INT32_C(x)  (x)
+N#define INT64_C(x)  __ESCAPE__(x ## ll)
+N
+N#define UINT8_C(x)  (x ## u)
+N#define UINT16_C(x) (x ## u)
+N#define UINT32_C(x) (x ## u)
+N#define UINT64_C(x) __ESCAPE__(x ## ull)
+N
+N    /* 7.18.4.2 macros for greatest-width integer constants */
+N#define INTMAX_C(x)  __ESCAPE__(x ## ll)
+N#define UINTMAX_C(x) __ESCAPE__(x ## ull)
+N
+N#endif /* __STDC_CONSTANT_MACROS */
+N
+N    #ifdef __cplusplus
+S         }  /* extern "C" */
+S      }  /* namespace std */
+N    #endif /* __cplusplus */
+N  #endif /* __STDINT_DECLS */
+N
+N  #ifdef __cplusplus
+S    #ifndef __STDINT_NO_EXPORTS
+S      using ::std::int8_t;
+S      using ::std::int16_t;
+S      using ::std::int32_t;
+S      using ::std::int64_t;
+S      using ::std::uint8_t;
+S      using ::std::uint16_t;
+S      using ::std::uint32_t;
+S      using ::std::uint64_t;
+S      using ::std::int_least8_t;
+S      using ::std::int_least16_t;
+S      using ::std::int_least32_t;
+S      using ::std::int_least64_t;
+S      using ::std::uint_least8_t;
+S      using ::std::uint_least16_t;
+S      using ::std::uint_least32_t;
+S      using ::std::uint_least64_t;
+S      using ::std::int_fast8_t;
+S      using ::std::int_fast16_t;
+S      using ::std::int_fast32_t;
+S      using ::std::int_fast64_t;
+S      using ::std::uint_fast8_t;
+S      using ::std::uint_fast16_t;
+S      using ::std::uint_fast32_t;
+S      using ::std::uint_fast64_t;
+S      using ::std::intptr_t;
+S      using ::std::uintptr_t;
+S      using ::std::intmax_t;
+S      using ::std::uintmax_t;
+S    #endif 
+N  #endif /* __cplusplus */
+N
+N#endif /* __stdint_h */
+N
+N/* end of stdint.h */
+N
+N
+N
+L 24 ".\USBStack\INC\rl_usb.h" 2
+N#include "usb.h"
+L 1 ".\USBStack\INC\usb.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USB_H__
+N#define __USB_H__
+N
+N/* General USB header files                                                   */
+N#include "usb_def.h"
+L 1 ".\USBStack\INC\usb_def.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USB_DEF_H__
+N#define __USB_DEF_H__
+N
+N#pragma anon_unions
+N
+N
+N/* bmRequestType.Dir */
+N#define REQUEST_HOST_TO_DEVICE     0
+N#define REQUEST_DEVICE_TO_HOST     1
+N
+N/* bmRequestType.Type */
+N#define REQUEST_STANDARD           0
+N#define REQUEST_CLASS              1
+N#define REQUEST_VENDOR             2
+N#define REQUEST_RESERVED           3
+N
+N/* bmRequestType.Recipient */
+N#define REQUEST_TO_DEVICE          0
+N#define REQUEST_TO_INTERFACE       1
+N#define REQUEST_TO_ENDPOINT        2
+N#define REQUEST_TO_OTHER           3
+N
+N/* bmRequestType Definition */
+Ntypedef __packed struct _REQUEST_TYPE {
+N  U8 Recipient : 5;                     /* D4..0: Recipient */
+N  U8 Type      : 2;                     /* D6..5: Type */
+N  U8 Dir       : 1;                     /* D7:    Data Phase Txsfer Direction */
+N} REQUEST_TYPE;
+N
+N/* USB Standard Request Codes */
+N#define USB_REQUEST_GET_STATUS                 0
+N#define USB_REQUEST_CLEAR_FEATURE              1
+N#define USB_REQUEST_SET_FEATURE                3
+N#define USB_REQUEST_SET_ADDRESS                5
+N#define USB_REQUEST_GET_DESCRIPTOR             6
+N#define USB_REQUEST_SET_DESCRIPTOR             7
+N#define USB_REQUEST_GET_CONFIGURATION          8
+N#define USB_REQUEST_SET_CONFIGURATION          9
+N#define USB_REQUEST_GET_INTERFACE              10
+N#define USB_REQUEST_SET_INTERFACE              11
+N#define USB_REQUEST_SYNC_FRAME                 12
+N
+N/* USB GET_STATUS Bit Values */
+N#define USB_GETSTATUS_SELF_POWERED             0x01
+N#define USB_GETSTATUS_REMOTE_WAKEUP            0x02
+N#define USB_GETSTATUS_ENDPOINT_STALL           0x01
+N
+N/* USB Standard Feature selectors */
+N#define USB_FEATURE_ENDPOINT_STALL             0
+N#define USB_FEATURE_REMOTE_WAKEUP              1
+N
+N/* USB Default Control Pipe Setup Packet */
+Ntypedef __packed struct _USB_SETUP_PACKET {
+N  REQUEST_TYPE bmRequestType;           /* bmRequestType */
+N  U8  bRequest;                         /* bRequest */
+N  __packed union {
+N    U16        wValue;                  /* wValue */
+N    __packed struct {
+N      U8         wValueL;
+N      U8         wValueH;
+N    };
+N  };
+N  __packed union {
+N    U16        wIndex;                  /* wIndex */
+N    __packed struct {
+N      U8         wIndexL;
+N      U8         wIndexH;
+N    };
+N  };
+N  U16          wLength;                 /* wLength */
+N} USB_SETUP_PACKET;
+N
+N
+N/* USB Descriptor Types */
+N#define USB_DEVICE_DESCRIPTOR_TYPE                  1
+N#define USB_CONFIGURATION_DESCRIPTOR_TYPE           2
+N#define USB_STRING_DESCRIPTOR_TYPE                  3
+N#define USB_INTERFACE_DESCRIPTOR_TYPE               4
+N#define USB_ENDPOINT_DESCRIPTOR_TYPE                5
+N#define USB_DEVICE_QUALIFIER_DESCRIPTOR_TYPE        6
+N#define USB_OTHER_SPEED_CONFIG_DESCRIPTOR_TYPE      7
+N#define USB_INTERFACE_POWER_DESCRIPTOR_TYPE         8
+N#define USB_OTG_DESCRIPTOR_TYPE                     9
+N#define USB_DEBUG_DESCRIPTOR_TYPE                  10
+N#define USB_INTERFACE_ASSOCIATION_DESCRIPTOR_TYPE  11
+N
+N/* USB Device Classes */
+N#define USB_DEVICE_CLASS_RESERVED              0x00
+N#define USB_DEVICE_CLASS_AUDIO                 0x01
+N#define USB_DEVICE_CLASS_COMMUNICATIONS        0x02
+N#define USB_DEVICE_CLASS_HUMAN_INTERFACE       0x03
+N#define USB_DEVICE_CLASS_MONITOR               0x04
+N#define USB_DEVICE_CLASS_PHYSICAL_INTERFACE    0x05
+N#define USB_DEVICE_CLASS_POWER                 0x06
+N#define USB_DEVICE_CLASS_PRINTER               0x07
+N#define USB_DEVICE_CLASS_STORAGE               0x08
+N#define USB_DEVICE_CLASS_HUB                   0x09
+N#define USB_DEVICE_CLASS_MISCELLANEOUS         0xEF
+N#define USB_DEVICE_CLASS_VENDOR_SPECIFIC       0xFF
+N
+N/* bmAttributes in Configuration Descriptor */
+N#define USB_CONFIG_POWERED_MASK                0x40
+N#define USB_CONFIG_BUS_POWERED                 0x80
+N#define USB_CONFIG_SELF_POWERED                0xC0
+N#define USB_CONFIG_REMOTE_WAKEUP               0x20
+N
+N/* bMaxPower in Configuration Descriptor */
+N#define USB_CONFIG_POWER_MA(mA)                ((mA)/2)
+N
+N/* bEndpointAddress in Endpoint Descriptor */
+N#define USB_ENDPOINT_DIRECTION_MASK            0x80
+N#define USB_ENDPOINT_OUT(addr)                 ((addr) | 0x00)
+N#define USB_ENDPOINT_IN(addr)                  ((addr) | 0x80)
+N
+N/* bmAttributes in Endpoint Descriptor */
+N#define USB_ENDPOINT_TYPE_MASK                 0x03
+N#define USB_ENDPOINT_TYPE_CONTROL              0x00
+N#define USB_ENDPOINT_TYPE_ISOCHRONOUS          0x01
+N#define USB_ENDPOINT_TYPE_BULK                 0x02
+N#define USB_ENDPOINT_TYPE_INTERRUPT            0x03
+N#define USB_ENDPOINT_SYNC_MASK                 0x0C
+N#define USB_ENDPOINT_SYNC_NO_SYNCHRONIZATION   0x00
+N#define USB_ENDPOINT_SYNC_ASYNCHRONOUS         0x04
+N#define USB_ENDPOINT_SYNC_ADAPTIVE             0x08
+N#define USB_ENDPOINT_SYNC_SYNCHRONOUS          0x0C
+N#define USB_ENDPOINT_USAGE_MASK                0x30
+N#define USB_ENDPOINT_USAGE_DATA                0x00
+N#define USB_ENDPOINT_USAGE_FEEDBACK            0x10
+N#define USB_ENDPOINT_USAGE_IMPLICIT_FEEDBACK   0x20
+N#define USB_ENDPOINT_USAGE_RESERVED            0x30
+N
+N/* USB Standard Device Descriptor */
+Ntypedef __packed struct _USB_DEVICE_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U16 bcdUSB;
+N  U8  bDeviceClass;
+N  U8  bDeviceSubClass;
+N  U8  bDeviceProtocol;
+N  U8  bMaxPacketSize0;
+N  U16 idVendor;
+N  U16 idProduct;
+N  U16 bcdDevice;
+N  U8  iManufacturer;
+N  U8  iProduct;
+N  U8  iSerialNumber;
+N  U8  bNumConfigurations;
+N} USB_DEVICE_DESCRIPTOR;
+N
+N/* USB 2.0 Device Qualifier Descriptor */
+Ntypedef __packed struct _USB_DEVICE_QUALIFIER_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U16 bcdUSB;
+N  U8  bDeviceClass;
+N  U8  bDeviceSubClass;
+N  U8  bDeviceProtocol;
+N  U8  bMaxPacketSize0;
+N  U8  bNumConfigurations;
+N  U8  bReserved;
+N} USB_DEVICE_QUALIFIER_DESCRIPTOR;
+N
+N/* USB Standard Configuration Descriptor */
+Ntypedef __packed struct _USB_CONFIGURATION_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U16 wTotalLength;
+N  U8  bNumInterfaces;
+N  U8  bConfigurationValue;
+N  U8  iConfiguration;
+N  U8  bmAttributes;
+N  U8  bMaxPower;
+N} USB_CONFIGURATION_DESCRIPTOR;
+N
+N/* USB Standard Interface Descriptor */
+Ntypedef __packed struct _USB_INTERFACE_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U8  bInterfaceNumber;
+N  U8  bAlternateSetting;
+N  U8  bNumEndpoints;
+N  U8  bInterfaceClass;
+N  U8  bInterfaceSubClass;
+N  U8  bInterfaceProtocol;
+N  U8  iInterface;
+N} USB_INTERFACE_DESCRIPTOR;
+N
+N/* USB Standard Endpoint Descriptor */
+Ntypedef __packed struct _USB_ENDPOINT_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U8  bEndpointAddress;
+N  U8  bmAttributes;
+N  U16 wMaxPacketSize;
+N  U8  bInterval;
+N} USB_ENDPOINT_DESCRIPTOR;
+N
+N/* USB String Descriptor */
+Ntypedef __packed struct _USB_STRING_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U16 bString/*[]*/;
+N} USB_STRING_DESCRIPTOR;
+N
+N/* USB Common Descriptor */
+Ntypedef __packed struct _USB_COMMON_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N} USB_COMMON_DESCRIPTOR;
+N
+N/* USB Interface Association Descriptor */
+Ntypedef __packed struct _USB_INTERFACE_ASSOCIATION_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U8  bFirstInterface;
+N  U8  bInterfaceCount;
+N  U8  bFunctionClass;
+N  U8  bFunctionSubclass;
+N  U8  bFunctionProtocol;
+N  U8  iFunction;
+N} USB_INTERFACE_ASSOCIATION_DESCRIPTOR;
+N
+N
+N#endif  /* __USB_DEF_H__ */
+L 21 ".\USBStack\INC\usb.h" 2
+N#include "usb_cdc.h"
+L 1 ".\USBStack\INC\usb_cdc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USB_CDC_H
+N#define __USB_CDC_H
+N
+N/*------------------------------------------------------------------------------
+N *      Definitions  based on usbcdc11.pdf (www.usb.org)
+N *----------------------------------------------------------------------------*/
+N/* Communication device class specification version 1.10 */
+N#define CDC_V1_10                               0x0110
+N
+N/* Communication interface class code */
+N/* (usbcdc11.pdf, 4.2, Table 15) */
+N#define CDC_COMMUNICATION_INTERFACE_CLASS       0x02
+N
+N/* Communication interface class subclass codes */
+N/* (usbcdc11.pdf, 4.3, Table 16) */
+N#define CDC_DIRECT_LINE_CONTROL_MODEL           0x01
+N#define CDC_ABSTRACT_CONTROL_MODEL              0x02
+N#define CDC_TELEPHONE_CONTROL_MODEL             0x03
+N#define CDC_MULTI_CHANNEL_CONTROL_MODEL         0x04
+N#define CDC_CAPI_CONTROL_MODEL                  0x05
+N#define CDC_ETHERNET_NETWORKING_CONTROL_MODEL   0x06
+N#define CDC_ATM_NETWORKING_CONTROL_MODEL        0x07
+N
+N/* Communication interface class control protocol codes */
+N/* (usbcdc11.pdf, 4.4, Table 17) */
+N#define CDC_PROTOCOL_COMMON_AT_COMMANDS         0x01
+N
+N/* Data interface class code */
+N/* (usbcdc11.pdf, 4.5, Table 18) */
+N#define CDC_DATA_INTERFACE_CLASS                0x0A
+N
+N/* Data interface class protocol codes */
+N/* (usbcdc11.pdf, 4.7, Table 19) */
+N#define CDC_PROTOCOL_ISDN_BRI                   0x30
+N#define CDC_PROTOCOL_HDLC                       0x31
+N#define CDC_PROTOCOL_TRANSPARENT                0x32
+N#define CDC_PROTOCOL_Q921_MANAGEMENT            0x50
+N#define CDC_PROTOCOL_Q921_DATA_LINK             0x51
+N#define CDC_PROTOCOL_Q921_MULTIPLEXOR           0x52
+N#define CDC_PROTOCOL_V42                        0x90
+N#define CDC_PROTOCOL_EURO_ISDN                  0x91
+N#define CDC_PROTOCOL_V24_RATE_ADAPTATION        0x92
+N#define CDC_PROTOCOL_CAPI                       0x93
+N#define CDC_PROTOCOL_HOST_BASED_DRIVER          0xFD
+N#define CDC_PROTOCOL_DESCRIBED_IN_PUFD          0xFE
+N
+N/* Type values for bDescriptorType field of functional descriptors */
+N/* (usbcdc11.pdf, 5.2.3, Table 24) */
+N#define CDC_CS_INTERFACE                        0x24
+N#define CDC_CS_ENDPOINT                         0x25
+N
+N/* Type values for bDescriptorSubtype field of functional descriptors */
+N/* (usbcdc11.pdf, 5.2.3, Table 25) */
+N#define CDC_HEADER                              0x00
+N#define CDC_CALL_MANAGEMENT                     0x01
+N#define CDC_ABSTRACT_CONTROL_MANAGEMENT         0x02
+N#define CDC_DIRECT_LINE_MANAGEMENT              0x03
+N#define CDC_TELEPHONE_RINGER                    0x04
+N#define CDC_REPORTING_CAPABILITIES              0x05
+N#define CDC_UNION                               0x06
+N#define CDC_COUNTRY_SELECTION                   0x07
+N#define CDC_TELEPHONE_OPERATIONAL_MODES         0x08
+N#define CDC_USB_TERMINAL                        0x09
+N#define CDC_NETWORK_CHANNEL                     0x0A
+N#define CDC_PROTOCOL_UNIT                       0x0B
+N#define CDC_EXTENSION_UNIT                      0x0C
+N#define CDC_MULTI_CHANNEL_MANAGEMENT            0x0D
+N#define CDC_CAPI_CONTROL_MANAGEMENT             0x0E
+N#define CDC_ETHERNET_NETWORKING                 0x0F
+N#define CDC_ATM_NETWORKING                      0x10
+N
+N/* CDC class-specific request codes */
+N/* (usbcdc11.pdf, 6.2, Table 46) */
+N/* see Table 45 for info about the specific requests. */
+N#define CDC_SEND_ENCAPSULATED_COMMAND           0x00
+N#define CDC_GET_ENCAPSULATED_RESPONSE           0x01
+N#define CDC_SET_COMM_FEATURE                    0x02
+N#define CDC_GET_COMM_FEATURE                    0x03
+N#define CDC_CLEAR_COMM_FEATURE                  0x04
+N#define CDC_SET_AUX_LINE_STATE                  0x10
+N#define CDC_SET_HOOK_STATE                      0x11
+N#define CDC_PULSE_SETUP                         0x12
+N#define CDC_SEND_PULSE                          0x13
+N#define CDC_SET_PULSE_TIME                      0x14
+N#define CDC_RING_AUX_JACK                       0x15
+N#define CDC_SET_LINE_CODING                     0x20
+N#define CDC_GET_LINE_CODING                     0x21
+N#define CDC_SET_CONTROL_LINE_STATE              0x22
+N#define CDC_SEND_BREAK                          0x23
+N#define CDC_SET_RINGER_PARMS                    0x30
+N#define CDC_GET_RINGER_PARMS                    0x31
+N#define CDC_SET_OPERATION_PARMS                 0x32
+N#define CDC_GET_OPERATION_PARMS                 0x33
+N#define CDC_SET_LINE_PARMS                      0x34
+N#define CDC_GET_LINE_PARMS                      0x35
+N#define CDC_DIAL_DIGITS                         0x36
+N#define CDC_SET_UNIT_PARAMETER                  0x37
+N#define CDC_GET_UNIT_PARAMETER                  0x38
+N#define CDC_CLEAR_UNIT_PARAMETER                0x39
+N#define CDC_GET_PROFILE                         0x3A
+N#define CDC_SET_ETHERNET_MULTICAST_FILTERS      0x40
+N#define CDC_SET_ETHERNET_PMP_FILTER             0x41
+N#define CDC_GET_ETHERNET_PMP_FILTER             0x42
+N#define CDC_SET_ETHERNET_PACKET_FILTER          0x43
+N#define CDC_GET_ETHERNET_STATISTIC              0x44
+N#define CDC_SET_ATM_DATA_FORMAT                 0x50
+N#define CDC_GET_ATM_DEVICE_STATISTICS           0x51
+N#define CDC_SET_ATM_DEFAULT_VC                  0x52
+N#define CDC_GET_ATM_VC_STATISTICS               0x53
+N
+N/* Communication feature selector codes */
+N/* (usbcdc11.pdf, 6.2.2..6.2.4, Table 47) */
+N#define CDC_ABSTRACT_STATE                      0x01
+N#define CDC_COUNTRY_SETTING                     0x02
+N
+N/* Feature Status returned for ABSTRACT_STATE Selector */
+N/* (usbcdc11.pdf, 6.2.3, Table 48) */
+N#define CDC_IDLE_SETTING                        (1 << 0)
+N#define CDC_DATA_MULTPLEXED_STATE               (1 << 1)
+N
+N
+N/* Control signal bitmap values for the SetControlLineState request */
+N/* (usbcdc11.pdf, 6.2.14, Table 51) */
+N#define CDC_DTE_PRESENT                         (1 << 0)
+N#define CDC_ACTIVATE_CARRIER                    (1 << 1)
+N
+N/* CDC class-specific notification codes */
+N/* (usbcdc11.pdf, 6.3, Table 68) */
+N/* see Table 67 for Info about class-specific notifications */
+N#define CDC_NOTIFICATION_NETWORK_CONNECTION     0x00
+N#define CDC_RESPONSE_AVAILABLE                  0x01
+N#define CDC_AUX_JACK_HOOK_STATE                 0x08
+N#define CDC_RING_DETECT                         0x09
+N#define CDC_NOTIFICATION_SERIAL_STATE           0x20
+N#define CDC_CALL_STATE_CHANGE                   0x28
+N#define CDC_LINE_STATE_CHANGE                   0x29
+N#define CDC_CONNECTION_SPEED_CHANGE             0x2A
+N
+N/* UART state bitmap values (Serial state notification). */
+N/* (usbcdc11.pdf, 6.3.5, Table 69) */
+N#define CDC_SERIAL_STATE_OVERRUN                (1 << 6)  /* receive data overrun error has occurred */
+N#define CDC_SERIAL_STATE_OVERRUN_Pos            (     6)
+N#define CDC_SERIAL_STATE_OVERRUN_Msk            (1 << CDC_SERIAL_STATE_OVERRUN_Pos)
+N#define CDC_SERIAL_STATE_PARITY                 (1 << 5)  /* parity error has occurred */
+N#define CDC_SERIAL_STATE_PARITY_Pos             (     5)
+N#define CDC_SERIAL_STATE_PARITY_Msk             (1 << CDC_SERIAL_STATE_PARITY_Pos)
+N#define CDC_SERIAL_STATE_FRAMING                (1 << 4)  /* framing error has occurred */
+N#define CDC_SERIAL_STATE_FRAMING_Pos            (     4)
+N#define CDC_SERIAL_STATE_FRAMING_Msk            (1 << CDC_SERIAL_STATE_FRAMING_Pos)
+N#define CDC_SERIAL_STATE_RING                   (1 << 3)  /* state of ring signal detection */
+N#define CDC_SERIAL_STATE_RING_Pos               (     3)
+N#define CDC_SERIAL_STATE_RING_Msk               (1 << CDC_SERIAL_STATE_RING_Pos)
+N#define CDC_SERIAL_STATE_BREAK                  (1 << 2)  /* state of break detection */
+N#define CDC_SERIAL_STATE_BREAK_Pos              (     2)
+N#define CDC_SERIAL_STATE_BREAK_Msk              (1 << CDC_SERIAL_STATE_BREAK_Pos)
+N#define CDC_SERIAL_STATE_TX_CARRIER             (1 << 1)  /* state of transmission carrier */
+N#define CDC_SERIAL_STATE_TX_CARRIER_Pos         (     1)
+N#define CDC_SERIAL_STATE_TX_CARRIER_Msk         (1 << CDC_SERIAL_STATE_TX_CARRIER_Pos)
+N#define CDC_SERIAL_STATE_RX_CARRIER             (1 << 0)  /* state of receiver carrier */
+N#define CDC_SERIAL_STATE_RX_CARRIER_Pos         (     0)
+N#define CDC_SERIAL_STATE_RX_CARRIER_Msk         (1 << CDC_SERIAL_STATE_RX_CARRIER_Pos)
+N
+N
+N/*------------------------------------------------------------------------------
+N *      Structures  based on usbcdc11.pdf (www.usb.org)
+N *----------------------------------------------------------------------------*/
+N
+N/* Header functional descriptor */
+N/* (usbcdc11.pdf, 5.2.3.1) */
+N/* This header must precede any list of class-specific descriptors. */
+Ntypedef __packed struct _CDC_HEADER_DESCRIPTOR{
+N  U8  bFunctionLength;                      /* size of this descriptor in bytes */
+N  U8  bDescriptorType;                      /* CS_INTERFACE descriptor type */
+N  U8  bDescriptorSubtype;                   /* Header functional descriptor subtype */
+N  U16 bcdCDC;                               /* USB CDC specification release version */
+N} CDC_HEADER_DESCRIPTOR;
+N
+N/* Call management functional descriptor */
+N/* (usbcdc11.pdf, 5.2.3.2) */
+N/* Describes the processing of calls for the communication class interface. */
+Ntypedef __packed struct _CDC_CALL_MANAGEMENT_DESCRIPTOR {
+N  U8  bFunctionLength;                      /* size of this descriptor in bytes */
+N  U8  bDescriptorType;                      /* CS_INTERFACE descriptor type */
+N  U8  bDescriptorSubtype;                   /* call management functional descriptor subtype */
+N  U8  bmCapabilities;                       /* capabilities that this configuration supports */
+N  U8  bDataInterface;                       /* interface number of the data class interface used for call management (optional) */
+N} CDC_CALL_MANAGEMENT_DESCRIPTOR;
+N
+N/* Abstract control management functional descriptor */
+N/* (usbcdc11.pdf, 5.2.3.3) */
+N/* Describes the command supported by the communication interface class with the Abstract Control Model subclass code. */
+Ntypedef __packed struct _CDC_ABSTRACT_CONTROL_MANAGEMENT_DESCRIPTOR {
+N  U8  bFunctionLength;                      /* size of this descriptor in bytes */
+N  U8  bDescriptorType;                      /* CS_INTERFACE descriptor type */
+N  U8  bDescriptorSubtype;                   /* abstract control management functional descriptor subtype */
+N  U8  bmCapabilities;                       /* capabilities supported by this configuration */
+N} CDC_ABSTRACT_CONTROL_MANAGEMENT_DESCRIPTOR;
+N
+N/* Union functional descriptors */
+N/* (usbcdc11.pdf, 5.2.3.8) */
+N/* Describes the relationship between a group of interfaces that can be considered to form a functional unit. */
+Ntypedef __packed struct _CDC_UNION_DESCRIPTOR {
+N  U8  bFunctionLength;                      /* size of this descriptor in bytes */
+N  U8  bDescriptorType;                      /* CS_INTERFACE descriptor type */
+N  U8  bDescriptorSubtype;                   /* union functional descriptor subtype */
+N  U8  bMasterInterface;                     /* interface number designated as master */
+N} CDC_UNION_DESCRIPTOR;
+N
+N/* Union functional descriptors with one slave interface */
+N/* (usbcdc11.pdf, 5.2.3.8) */
+Ntypedef __packed struct _CDC_UNION_1SLAVE_DESCRIPTOR {
+N  CDC_UNION_DESCRIPTOR sUnion;              /* Union functional descriptor */
+N  U8                   bSlaveInterfaces[1]; /* Slave interface 0 */
+N} CDC_UNION_1SLAVE_DESCRIPTOR;
+N
+N/* Line coding structure */
+N/* Format of the data returned when a GetLineCoding request is received */
+N/* (usbcdc11.pdf, 6.2.13) */
+Ntypedef __packed struct _CDC_LINE_CODING {
+N  U32 dwDTERate;                            /* Data terminal rate in bits per second */
+N  U8  bCharFormat;                          /* Number of stop bits */
+N  U8  bParityType;                          /* Parity bit type */
+N  U8  bDataBits;                            /* Number of data bits */
+N} CDC_LINE_CODING;
+N
+N/* Notification header */
+N/* Data sent on the notification endpoint must follow this header. */
+N/* see  USB_SETUP_PACKET in file usb.h */
+Ntypedef USB_SETUP_PACKET CDC_NOTIFICATION_HEADER;
+N
+N#endif /* __USB_CDC_H */
+N
+L 22 ".\USBStack\INC\usb.h" 2
+N#include "usb_hid.h"
+L 1 ".\USBStack\INC\usb_hid.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USB_HID_H__
+N#define __USB_HID_H__
+N
+N
+N/* HID Subclass Codes */
+N#define HID_SUBCLASS_NONE               0x00
+N#define HID_SUBCLASS_BOOT               0x01
+N
+N/* HID Protocol Codes */
+N#define HID_PROTOCOL_NONE               0x00
+N#define HID_PROTOCOL_BOOT               0x00
+N#define HID_PROTOCOL_KEYBOARD           0x01
+N#define HID_PROTOCOL_REPORT             0x01
+N#define HID_PROTOCOL_MOUSE              0x02
+N
+N
+N/* HID Descriptor Types */
+N#define HID_HID_DESCRIPTOR_TYPE         0x21
+N#define HID_REPORT_DESCRIPTOR_TYPE      0x22
+N#define HID_PHYSICAL_DESCRIPTOR_TYPE    0x23
+N
+N
+N/* HID Descriptor */
+Ntypedef __packed struct _HID_DESCRIPTOR {
+N  U8  bLength;
+N  U8  bDescriptorType;
+N  U16 bcdHID;
+N  U8  bCountryCode;
+N  U8  bNumDescriptors;
+N  /* Array of one or more descriptors */
+N  __packed struct _HID_DESCRIPTOR_LIST {
+N    U8  bDescriptorType;
+N    U16 wDescriptorLength;
+N  } DescriptorList[1];
+N} HID_DESCRIPTOR;
+N
+N
+N/* HID Request Codes */
+N#define HID_REQUEST_GET_REPORT          0x01
+N#define HID_REQUEST_GET_IDLE            0x02
+N#define HID_REQUEST_GET_PROTOCOL        0x03
+N#define HID_REQUEST_SET_REPORT          0x09
+N#define HID_REQUEST_SET_IDLE            0x0A
+N#define HID_REQUEST_SET_PROTOCOL        0x0B
+N
+N/* HID Report Types */
+N#define HID_REPORT_INPUT                0x01
+N#define HID_REPORT_OUTPUT               0x02
+N#define HID_REPORT_FEATURE              0x03
+N
+N
+N/* Usage Pages */
+N#define HID_USAGE_PAGE_UNDEFINED        0x00
+N#define HID_USAGE_PAGE_GENERIC          0x01
+N#define HID_USAGE_PAGE_SIMULATION       0x02
+N#define HID_USAGE_PAGE_VR               0x03
+N#define HID_USAGE_PAGE_SPORT            0x04
+N#define HID_USAGE_PAGE_GAME             0x05
+N#define HID_USAGE_PAGE_DEV_CONTROLS     0x06
+N#define HID_USAGE_PAGE_KEYBOARD         0x07
+N#define HID_USAGE_PAGE_LED              0x08
+N#define HID_USAGE_PAGE_BUTTON           0x09
+N#define HID_USAGE_PAGE_ORDINAL          0x0A
+N#define HID_USAGE_PAGE_TELEPHONY        0x0B
+N#define HID_USAGE_PAGE_CONSUMER         0x0C
+N#define HID_USAGE_PAGE_DIGITIZER        0x0D
+N#define HID_USAGE_PAGE_UNICODE          0x10
+N#define HID_USAGE_PAGE_ALPHANUMERIC     0x14
+N/* ... */
+N
+N
+N/* Generic Desktop Page (0x01) */
+N#define HID_USAGE_GENERIC_POINTER               0x01
+N#define HID_USAGE_GENERIC_MOUSE                 0x02
+N#define HID_USAGE_GENERIC_JOYSTICK              0x04
+N#define HID_USAGE_GENERIC_GAMEPAD               0x05
+N#define HID_USAGE_GENERIC_KEYBOARD              0x06
+N#define HID_USAGE_GENERIC_KEYPAD                0x07
+N#define HID_USAGE_GENERIC_X                     0x30
+N#define HID_USAGE_GENERIC_Y                     0x31
+N#define HID_USAGE_GENERIC_Z                     0x32
+N#define HID_USAGE_GENERIC_RX                    0x33
+N#define HID_USAGE_GENERIC_RY                    0x34
+N#define HID_USAGE_GENERIC_RZ                    0x35
+N#define HID_USAGE_GENERIC_SLIDER                0x36
+N#define HID_USAGE_GENERIC_DIAL                  0x37
+N#define HID_USAGE_GENERIC_WHEEL                 0x38
+N#define HID_USAGE_GENERIC_HATSWITCH             0x39
+N#define HID_USAGE_GENERIC_COUNTED_BUFFER        0x3A
+N#define HID_USAGE_GENERIC_BYTE_COUNT            0x3B
+N#define HID_USAGE_GENERIC_MOTION_WAKEUP         0x3C
+N#define HID_USAGE_GENERIC_VX                    0x40
+N#define HID_USAGE_GENERIC_VY                    0x41
+N#define HID_USAGE_GENERIC_VZ                    0x42
+N#define HID_USAGE_GENERIC_VBRX                  0x43
+N#define HID_USAGE_GENERIC_VBRY                  0x44
+N#define HID_USAGE_GENERIC_VBRZ                  0x45
+N#define HID_USAGE_GENERIC_VNO                   0x46
+N#define HID_USAGE_GENERIC_SYSTEM_CTL            0x80
+N#define HID_USAGE_GENERIC_SYSCTL_POWER          0x81
+N#define HID_USAGE_GENERIC_SYSCTL_SLEEP          0x82
+N#define HID_USAGE_GENERIC_SYSCTL_WAKE           0x83
+N#define HID_USAGE_GENERIC_SYSCTL_CONTEXT_MENU   0x84
+N#define HID_USAGE_GENERIC_SYSCTL_MAIN_MENU      0x85
+N#define HID_USAGE_GENERIC_SYSCTL_APP_MENU       0x86
+N#define HID_USAGE_GENERIC_SYSCTL_HELP_MENU      0x87
+N#define HID_USAGE_GENERIC_SYSCTL_MENU_EXIT      0x88
+N#define HID_USAGE_GENERIC_SYSCTL_MENU_SELECT    0x89
+N#define HID_USAGE_GENERIC_SYSCTL_MENU_RIGHT     0x8A
+N#define HID_USAGE_GENERIC_SYSCTL_MENU_LEFT      0x8B
+N#define HID_USAGE_GENERIC_SYSCTL_MENU_UP        0x8C
+N#define HID_USAGE_GENERIC_SYSCTL_MENU_DOWN      0x8D
+N/* ... */
+N
+N/* Simulation Controls Page (0x02) */
+N/* ... */
+N#define HID_USAGE_SIMULATION_RUDDER             0xBA
+N#define HID_USAGE_SIMULATION_THROTTLE           0xBB
+N/* ... */
+N
+N/* Virtual Reality Controls Page (0x03) */
+N/* ... */
+N
+N/* Sport Controls Page (0x04) */
+N/* ... */
+N
+N/* Game Controls Page (0x05) */
+N/* ... */
+N
+N/* Generic Device Controls Page (0x06) */
+N/* ... */
+N
+N/* Keyboard/Keypad Page (0x07) */
+N
+N/* Keyboard Usage Keys */
+Nextern const unsigned char HID_KEYBOARD_ID_TO_ASCII[256];
+Nextern const unsigned char HID_KEYBOARD_ALT_ID_TO_ASCII[57];
+N
+N/* Error "Keys" */
+N#define HID_USAGE_KEYBOARD_NOEVENT              0x00
+N#define HID_USAGE_KEYBOARD_ROLLOVER             0x01
+N#define HID_USAGE_KEYBOARD_POSTFAIL             0x02
+N#define HID_USAGE_KEYBOARD_UNDEFINED            0x03
+N
+N/* Letters */
+N#define HID_USAGE_KEYBOARD_aA                   0x04
+N#define HID_USAGE_KEYBOARD_zZ                   0x1D
+N
+N/* Numbers */
+N#define HID_USAGE_KEYBOARD_ONE                  0x1E
+N#define HID_USAGE_KEYBOARD_ZERO                 0x27
+N
+N#define HID_USAGE_KEYBOARD_RETURN               0x28
+N#define HID_USAGE_KEYBOARD_ESCAPE               0x29
+N#define HID_USAGE_KEYBOARD_DELETE               0x2A
+N
+N/* Funtion Keys */
+N#define HID_USAGE_KEYBOARD_F1                   0x3A
+N#define HID_USAGE_KEYBOARD_F12                  0x45
+N
+N#define HID_USAGE_KEYBOARD_PRINT_SCREEN         0x46
+N
+N/* Modifier Keys */
+N#define HID_USAGE_KEYBOARD_LCTRL                0xE0
+N#define HID_USAGE_KEYBOARD_LSHFT                0xE1
+N#define HID_USAGE_KEYBOARD_LALT                 0xE2
+N#define HID_USAGE_KEYBOARD_LGUI                 0xE3
+N#define HID_USAGE_KEYBOARD_RCTRL                0xE4
+N#define HID_USAGE_KEYBOARD_RSHFT                0xE5
+N#define HID_USAGE_KEYBOARD_RALT                 0xE6
+N#define HID_USAGE_KEYBOARD_RGUI                 0xE7
+N#define HID_USAGE_KEYBOARD_SCROLL_LOCK          0x47
+N#define HID_USAGE_KEYBOARD_NUM_LOCK             0x53
+N#define HID_USAGE_KEYBOARD_CAPS_LOCK            0x39
+N
+N/* Modifier Keys (values) */
+N#define HID_USAGE_KEYBOARD_MOD_LCTRL            0x01
+N#define HID_USAGE_KEYBOARD_MOD_LSHIFT           0x02
+N#define HID_USAGE_KEYBOARD_MOD_LALTL            0x04
+N#define HID_USAGE_KEYBOARD_MOD_LGUI             0x08
+N#define HID_USAGE_KEYBOARD_MOD_RCTRL            0x10
+N#define HID_USAGE_KEYBOARD_MOD_RSHIFT           0x20
+N#define HID_USAGE_KEYBOARD_MOD_RALTL            0x40
+N#define HID_USAGE_KEYBOARD_MOD_RGUI             0x80
+N
+N/* ... */
+N
+N/* LED Page (0x08) */
+N#define HID_USAGE_LED_NUM_LOCK                  0x01
+N#define HID_USAGE_LED_CAPS_LOCK                 0x02
+N#define HID_USAGE_LED_SCROLL_LOCK               0x03
+N#define HID_USAGE_LED_COMPOSE                   0x04
+N#define HID_USAGE_LED_KANA                      0x05
+N#define HID_USAGE_LED_POWER                     0x06
+N#define HID_USAGE_LED_SHIFT                     0x07
+N#define HID_USAGE_LED_DO_NOT_DISTURB            0x08
+N#define HID_USAGE_LED_MUTE                      0x09
+N#define HID_USAGE_LED_TONE_ENABLE               0x0A
+N#define HID_USAGE_LED_HIGH_CUT_FILTER           0x0B
+N#define HID_USAGE_LED_LOW_CUT_FILTER            0x0C
+N#define HID_USAGE_LED_EQUALIZER_ENABLE          0x0D
+N#define HID_USAGE_LED_SOUND_FIELD_ON            0x0E
+N#define HID_USAGE_LED_SURROUND_FIELD_ON         0x0F
+N#define HID_USAGE_LED_REPEAT                    0x10
+N#define HID_USAGE_LED_STEREO                    0x11
+N#define HID_USAGE_LED_SAMPLING_RATE_DETECT      0x12
+N#define HID_USAGE_LED_SPINNING                  0x13
+N#define HID_USAGE_LED_CAV                       0x14
+N#define HID_USAGE_LED_CLV                       0x15
+N#define HID_USAGE_LED_RECORDING_FORMAT_DET      0x16
+N#define HID_USAGE_LED_OFF_HOOK                  0x17
+N#define HID_USAGE_LED_RING                      0x18
+N#define HID_USAGE_LED_MESSAGE_WAITING           0x19
+N#define HID_USAGE_LED_DATA_MODE                 0x1A
+N#define HID_USAGE_LED_BATTERY_OPERATION         0x1B
+N#define HID_USAGE_LED_BATTERY_OK                0x1C
+N#define HID_USAGE_LED_BATTERY_LOW               0x1D
+N#define HID_USAGE_LED_SPEAKER                   0x1E
+N#define HID_USAGE_LED_HEAD_SET                  0x1F
+N#define HID_USAGE_LED_HOLD                      0x20
+N#define HID_USAGE_LED_MICROPHONE                0x21
+N#define HID_USAGE_LED_COVERAGE                  0x22
+N#define HID_USAGE_LED_NIGHT_MODE                0x23
+N#define HID_USAGE_LED_SEND_CALLS                0x24
+N#define HID_USAGE_LED_CALL_PICKUP               0x25
+N#define HID_USAGE_LED_CONFERENCE                0x26
+N#define HID_USAGE_LED_STAND_BY                  0x27
+N#define HID_USAGE_LED_CAMERA_ON                 0x28
+N#define HID_USAGE_LED_CAMERA_OFF                0x29
+N#define HID_USAGE_LED_ON_LINE                   0x2A
+N#define HID_USAGE_LED_OFF_LINE                  0x2B
+N#define HID_USAGE_LED_BUSY                      0x2C
+N#define HID_USAGE_LED_READY                     0x2D
+N#define HID_USAGE_LED_PAPER_OUT                 0x2E
+N#define HID_USAGE_LED_PAPER_JAM                 0x2F
+N#define HID_USAGE_LED_REMOTE                    0x30
+N#define HID_USAGE_LED_FORWARD                   0x31
+N#define HID_USAGE_LED_REVERSE                   0x32
+N#define HID_USAGE_LED_STOP                      0x33
+N#define HID_USAGE_LED_REWIND                    0x34
+N#define HID_USAGE_LED_FAST_FORWARD              0x35
+N#define HID_USAGE_LED_PLAY                      0x36
+N#define HID_USAGE_LED_PAUSE                     0x37
+N#define HID_USAGE_LED_RECORD                    0x38
+N#define HID_USAGE_LED_ERROR                     0x39
+N#define HID_USAGE_LED_SELECTED_INDICATOR        0x3A
+N#define HID_USAGE_LED_IN_USE_INDICATOR          0x3B
+N#define HID_USAGE_LED_MULTI_MODE_INDICATOR      0x3C
+N#define HID_USAGE_LED_INDICATOR_ON              0x3D
+N#define HID_USAGE_LED_INDICATOR_FLASH           0x3E
+N#define HID_USAGE_LED_INDICATOR_SLOW_BLINK      0x3F
+N#define HID_USAGE_LED_INDICATOR_FAST_BLINK      0x40
+N#define HID_USAGE_LED_INDICATOR_OFF             0x41
+N#define HID_USAGE_LED_FLASH_ON_TIME             0x42
+N#define HID_USAGE_LED_SLOW_BLINK_ON_TIME        0x43
+N#define HID_USAGE_LED_SLOW_BLINK_OFF_TIME       0x44
+N#define HID_USAGE_LED_FAST_BLINK_ON_TIME        0x45
+N#define HID_USAGE_LED_FAST_BLINK_OFF_TIME       0x46
+N#define HID_USAGE_LED_INDICATOR_COLOR           0x47
+N#define HID_USAGE_LED_RED                       0x48
+N#define HID_USAGE_LED_GREEN                     0x49
+N#define HID_USAGE_LED_AMBER                     0x4A
+N#define HID_USAGE_LED_GENERIC_INDICATOR         0x4B
+N
+N/* Button Page (0x09) */
+N/*   There is no need to label these usages. */
+N
+N/* Ordinal Page (0x0A) */
+N/*   There is no need to label these usages. */
+N
+N/* Telephony Device Page (0x0B) */
+N#define HID_USAGE_TELEPHONY_PHONE               0x01
+N#define HID_USAGE_TELEPHONY_ANSWERING_MACHINE   0x02
+N#define HID_USAGE_TELEPHONY_MESSAGE_CONTROLS    0x03
+N#define HID_USAGE_TELEPHONY_HANDSET             0x04
+N#define HID_USAGE_TELEPHONY_HEADSET             0x05
+N#define HID_USAGE_TELEPHONY_KEYPAD              0x06
+N#define HID_USAGE_TELEPHONY_PROGRAMMABLE_BUTTON 0x07
+N/* ... */
+N
+N/* Consumer Page (0x0C) */
+N#define HID_USAGE_CONSUMER_CONTROL              0x01
+N/* ... */
+N
+N/* and others ... */
+N
+N
+N/* HID Report Item Macros */
+N
+N/* Main Items */
+N#define HID_Input(x)           0x81,x
+N#define HID_Output(x)          0x91,x
+N#define HID_Feature(x)         0xB1,x
+N#define HID_Collection(x)      0xA1,x
+N#define HID_EndCollection      0xC0
+N
+N/* Data (Input, Output, Feature) */
+N#define HID_Data               0<<0
+N#define HID_Constant           1<<0
+N#define HID_Array              0<<1
+N#define HID_Variable           1<<1
+N#define HID_Absolute           0<<2
+N#define HID_Relative           1<<2
+N#define HID_NoWrap             0<<3
+N#define HID_Wrap               1<<3
+N#define HID_Linear             0<<4
+N#define HID_NonLinear          1<<4
+N#define HID_PreferredState     0<<5
+N#define HID_NoPreferred        1<<5
+N#define HID_NoNullPosition     0<<6
+N#define HID_NullState          1<<6
+N#define HID_NonVolatile        0<<7
+N#define HID_Volatile           1<<7
+N
+N/* Collection Data */
+N#define HID_Physical           0x00
+N#define HID_Application        0x01
+N#define HID_Logical            0x02
+N#define HID_Report             0x03
+N#define HID_NamedArray         0x04
+N#define HID_UsageSwitch        0x05
+N#define HID_UsageModifier      0x06
+N
+N/* Global Items */
+N#define HID_UsagePage(x)       0x05,x
+N#define HID_UsagePageVendor(x) 0x06,x,0xFF
+N#define HID_LogicalMin(x)      0x15,x
+N#define HID_LogicalMinS(x)     0x16,(x&0xFF),((x>>8)&0xFF)
+N#define HID_LogicalMinL(x)     0x17,(x&0xFF),((x>>8)&0xFF),((x>>16)&0xFF),((x>>24)&0xFF)
+N#define HID_LogicalMax(x)      0x25,x
+N#define HID_LogicalMaxS(x)     0x26,(x&0xFF),((x>>8)&0xFF)
+N#define HID_LogicalMaxL(x)     0x27,(x&0xFF),((x>>8)&0xFF),((x>>16)&0xFF),((x>>24)&0xFF)
+N#define HID_PhysicalMin(x)     0x35,x
+N#define HID_PhysicalMinS(x)    0x36,(x&0xFF),((x>>8)&0xFF)
+N#define HID_PhysicalMinL(x)    0x37,(x&0xFF),((x>>8)&0xFF),((x>>16)&0xFF),((x>>24)&0xFF)
+N#define HID_PhysicalMax(x)     0x45,x
+N#define HID_PhysicalMaxS(x)    0x46,(x&0xFF),((x>>8)&0xFF)
+N#define HID_PhysicalMaxL(x)    0x47,(x&0xFF),((x>>8)&0xFF),((x>>16)&0xFF),((x>>24)&0xFF)
+N#define HID_UnitExponent(x)    0x55,x
+N#define HID_Unit(x)            0x65,x
+N#define HID_UnitS(x)           0x66,(x&0xFF),((x>>8)&0xFF)
+N#define HID_UnitL(x)           0x67,(x&0xFF),((x>>8)&0xFF),((x>>16)&0xFF),((x>>24)&0xFF)
+N#define HID_ReportSize(x)      0x75,x
+N#define HID_ReportSizeS(x)     0x76,(x&0xFF),((x>>8)&0xFF)
+N#define HID_ReportSizeL(x)     0x77,(x&0xFF),((x>>8)&0xFF),((x>>16)&0xFF),((x>>24)&0xFF)
+N#define HID_ReportID(x)        0x85,x
+N#define HID_ReportCount(x)     0x95,x
+N#define HID_ReportCountS(x)    0x96,(x&0xFF),((x>>8)&0xFF)
+N#define HID_ReportCountL(x)    0x97,(x&0xFF),((x>>8)&0xFF),((x>>16)&0xFF),((x>>24)&0xFF)
+N#define HID_Push               0xA4
+N#define HID_Pop                0xB4
+N
+N/* Local Items */
+N#define HID_Usage(x)           0x09,x
+N#define HID_UsageMin(x)        0x19,x
+N#define HID_UsageMax(x)        0x29,x
+N
+N
+N#endif  /* __USB_HID_H__ */
+L 23 ".\USBStack\INC\usb.h" 2
+N#include "usb_msc.h"
+L 1 ".\USBStack\INC\usb_msc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USB_MSC_H__
+N#define __USB_MSC_H__
+N
+N
+N/* MSC Subclass Codes */
+N#define MSC_SUBCLASS_RBC                0x01
+N#define MSC_SUBCLASS_SFF8020I_MMC2      0x02
+N#define MSC_SUBCLASS_QIC157             0x03
+N#define MSC_SUBCLASS_UFI                0x04
+N#define MSC_SUBCLASS_SFF8070I           0x05
+N#define MSC_SUBCLASS_SCSI               0x06
+N
+N/* MSC Protocol Codes */
+N#define MSC_PROTOCOL_CBI_INT            0x00
+N#define MSC_PROTOCOL_CBI_NOINT          0x01
+N#define MSC_PROTOCOL_BULK_ONLY          0x50
+N
+N
+N/* MSC Request Codes */
+N#define MSC_REQUEST_RESET               0xFF
+N#define MSC_REQUEST_GET_MAX_LUN         0xFE
+N
+N
+N/* MSC Bulk-only Stage */
+N#define MSC_BS_CBW                      0       /* Command Block Wrapper */
+N#define MSC_BS_DATA_OUT                 1       /* Data Out Phase */
+N#define MSC_BS_DATA_IN                  2       /* Data In Phase */
+N#define MSC_BS_DATA_IN_LAST             3       /* Data In Last Phase */
+N#define MSC_BS_DATA_IN_LAST_STALL       4       /* Data In Last Phase with Stall */
+N#define MSC_BS_CSW                      5       /* Command Status Wrapper */
+N#define MSC_BS_ERROR                    6       /* Error */
+N
+N
+N/* Bulk-only Command Block Wrapper */
+Ntypedef __packed struct _MSC_CBW {
+N  U32 dSignature;
+N  U32 dTag;
+N  U32 dDataLength;
+N  U8  bmFlags;
+N  U8  bLUN;
+N  U8  bCBLength;
+N  U8  CB[16];
+N} MSC_CBW;
+N
+N/* Bulk-only Command Status Wrapper */
+Ntypedef __packed struct _MSC_CSW {
+N  U32 dSignature;
+N  U32 dTag;
+N  U32 dDataResidue;
+N  U8  bStatus;
+N} MSC_CSW;
+N
+N#define MSC_CBW_Signature               0x43425355
+N#define MSC_CSW_Signature               0x53425355
+N
+N
+N/* CSW Status Definitions */
+N#define CSW_CMD_PASSED                  0x00
+N#define CSW_CMD_FAILED                  0x01
+N#define CSW_PHASE_ERROR                 0x02
+N
+N
+N/* SCSI Commands */
+N#define SCSI_TEST_UNIT_READY            0x00
+N#define SCSI_REQUEST_SENSE              0x03
+N#define SCSI_FORMAT_UNIT                0x04
+N#define SCSI_INQUIRY                    0x12
+N#define SCSI_MODE_SELECT6               0x15
+N#define SCSI_MODE_SENSE6                0x1A
+N#define SCSI_START_STOP_UNIT            0x1B
+N#define SCSI_MEDIA_REMOVAL              0x1E
+N#define SCSI_READ_FORMAT_CAPACITIES     0x23
+N#define SCSI_READ_CAPACITY              0x25
+N#define SCSI_READ10                     0x28
+N#define SCSI_WRITE10                    0x2A
+N#define SCSI_VERIFY10                   0x2F
+N#define SCSI_SYNC_CACHE10               0x35
+N#define SCSI_READ12                     0xA8
+N#define SCSI_WRITE12                    0xAA
+N#define SCSI_MODE_SELECT10              0x55
+N#define SCSI_MODE_SENSE10               0x5A
+N#define SCSI_SYNC_CACHE16               0x91
+N#define SCSI_ATA_COMMAND_PASS_THROUGH12 0xA1
+N#define SCSI_ATA_COMMAND_PASS_THROUGH16 0x85
+N#define SCSI_SERVICE_ACTION_IN12        0xAB
+N#define SCSI_SERVICE_ACTION_IN16        0x9E
+N#define SCSI_SERVICE_ACTION_OUT12       0xA9
+N#define SCSI_SERVICE_ACTION_OUT16       0x9F
+N#define SCSI_REPORT_ID_INFO             0xA3
+N
+N#endif  /* __USB_MSC_H__ */
+L 24 ".\USBStack\INC\usb.h" 2
+N
+N/* USB Device header files                                                    */
+N#include "usbd_core.h"
+L 1 ".\USBStack\INC\usbd_core.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_CORE_H__
+N#define __USBD_CORE_H__
+N
+N
+N/*--------------------------- Data structures --------------------------------*/
+N
+N/* USB Device Core Endpoint Data Structure */
+Ntypedef struct _USBD_EP_DATA {
+N  U8 *pData;
+N  U16 Count;
+N} USBD_EP_DATA;
+N
+N
+N/*--------------------------- Global variables -------------------------------*/
+N
+N/* USB Device Core Global Variables */
+Nextern U16         USBD_DeviceStatus;
+Nextern U8          USBD_DeviceAddress;
+Nextern U8          USBD_Configuration;
+Nextern U32         USBD_EndPointMask;
+Nextern U32         USBD_EndPointHalt;
+Nextern U32         USBD_EndPointStall;
+Nextern U8          USBD_NumInterfaces;
+Nextern U8          USBD_HighSpeed;
+Nextern U8          USBD_ZLP;
+N
+Nextern USBD_EP_DATA     USBD_EP0Data;
+Nextern USB_SETUP_PACKET USBD_SetupPacket;
+N
+Nextern OS_TID      USBD_RTX_DevTask;
+Nextern OS_TID      USBD_RTX_EPTask[];
+Nextern OS_TID      USBD_RTX_CoreTask;
+N
+N
+N/*--------------------------- Functions exported to class specific files -----*/
+N
+Nextern void        USBD_SetupStage     (void);
+Nextern void        USBD_DataInStage    (void);
+Nextern void        USBD_DataOutStage   (void);
+Nextern void        USBD_StatusInStage  (void);
+Nextern void        USBD_StatusOutStage (void);
+N
+N
+N/*--------------------------- Event handling routines ------------------------*/
+N
+Nextern        void usbd_class_init    (void);
+N
+Nextern        void USBD_EndPoint0     (U32 event);
+N
+Nextern __task void USBD_RTX_EndPoint0 (void);
+Xextern __declspec(noreturn) void USBD_RTX_EndPoint0 (void);
+N
+N
+N#endif  /* __USBD_CORE_H__ */
+L 27 ".\USBStack\INC\usb.h" 2
+N#include "usbd_core_cdc.h"
+L 1 ".\USBStack\INC\usbd_core_cdc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_CORE_CDC_H__
+N#define __USBD_CORE_CDC_H__
+N
+N
+N/*--------------------------- Core overridable class specific functions ------*/
+N
+Nextern BOOL USBD_EndPoint0_Setup_CDC_ReqToIF (void);
+Nextern BOOL USBD_EndPoint0_Out_CDC_ReqToIF   (void);
+N
+N
+N#endif  /* __USBD_CORE_CDC_H__ */
+L 28 ".\USBStack\INC\usb.h" 2
+N#include "usbd_core_hid.h"
+L 1 ".\USBStack\INC\usbd_core_hid.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_CORE_HID_H__
+N#define __USBD_CORE_HID_H__
+N
+N
+N/*--------------------------- Core overridable class specific functions ------*/
+N
+Nextern BOOL USBD_ReqGetDescriptor_HID        (U8 **pD, U32 *len);
+Nextern BOOL USBD_EndPoint0_Setup_HID_ReqToIF (void);
+Nextern BOOL USBD_EndPoint0_Out_HID_ReqToIF   (void);
+N
+N
+N#endif  /* __USBD_CORE_HID_H__ */
+L 29 ".\USBStack\INC\usb.h" 2
+N#include "usbd_core_msc.h"
+L 1 ".\USBStack\INC\usbd_core_msc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_CORE_MSC_H__
+N#define __USBD_CORE_MSC_H__
+N
+N
+N/*--------------------------- Core overridable class specific functions ------*/
+N
+Nextern void USBD_ReqClrFeature_MSC           (U32 EPNum);
+Nextern BOOL USBD_EndPoint0_Setup_MSC_ReqToIF (void);
+Nextern BOOL USBD_EndPoint0_Out_MSC_ReqToIF   (void);
+N
+N
+N#endif  /* __USBD_CORE_MSC_H__ */
+L 30 ".\USBStack\INC\usb.h" 2
+N
+N#include "usbd_desc.h"
+L 1 ".\USBStack\INC\usbd_desc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_DESC_H__
+N#define __USBD_DESC_H__
+N
+N#define WBVAL(x)                          (x & 0xFF),((x >> 8) & 0xFF)
+N#define B3VAL(x)                          (x & 0xFF),((x >> 8) & 0xFF),((x >> 16) & 0xFF)
+N#define USB_DEVICE_DESC_SIZE              (sizeof(USB_DEVICE_DESCRIPTOR))
+N#define USB_DEVICE_QUALI_SIZE             (sizeof(USB_DEVICE_QUALIFIER_DESCRIPTOR))
+N#define USB_CONFIGUARTION_DESC_SIZE       (sizeof(USB_CONFIGURATION_DESCRIPTOR))
+N#define USB_INTERFACE_ASSOC_DESC_SIZE     (sizeof(USB_INTERFACE_ASSOCIATION_DESCRIPTOR))
+N#define USB_INTERFACE_DESC_SIZE           (sizeof(USB_INTERFACE_DESCRIPTOR))
+N#define USB_ENDPOINT_DESC_SIZE            (sizeof(USB_ENDPOINT_DESCRIPTOR))
+N#define USB_HID_DESC_SIZE                 (sizeof(HID_DESCRIPTOR))
+N#define USB_HID_REPORT_DESC_SIZE          (sizeof(USBD_HID_ReportDescriptor))
+N
+N#endif  /* __USBD_DESC_H__ */
+L 32 ".\USBStack\INC\usb.h" 2
+N#include "usbd_event.h"
+L 1 ".\USBStack\INC\usbd_event.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_EVENT_H__
+N#define __USBD_EVENT_H__
+N
+N
+N/* USB Device - Device Events                                                 */
+N#define USBD_EVT_POWER_ON    (1 <<  0)  /* USB Power On                       */
+N#define USBD_EVT_POWER_OFF   (1 <<  1)  /* USB Power Off                      */
+N#define USBD_EVT_RESET       (1 <<  2)  /* USB Bus Reset                      */
+N#define USBD_EVT_WAKEUP      (1 <<  3)  /* USB Remote Wakeup                  */
+N#define USBD_EVT_SUSPEND     (1 <<  4)  /* USB Suspend                        */
+N#define USBD_EVT_RESUME      (1 <<  5)  /* USB Resume                         */
+N#define USBD_EVT_SOF         (1 <<  6)  /* USB Start of Frame                 */
+N#define USBD_EVT_ERROR       (1 <<  7)  /* USB Error                          */
+N
+N/* USB Device - Endpoint Events                                               */
+N#define USBD_EVT_SETUP       (1 <<  1)  /* Setup Packet                       */
+N#define USBD_EVT_OUT         (1 <<  2)  /* OUT Packet                         */
+N#define USBD_EVT_IN          (1 <<  3)  /*  IN Packet                         */
+N#define USBD_EVT_OUT_NAK     (1 <<  4)  /* OUT Packet - Not Acknowledged      */
+N#define USBD_EVT_IN_NAK      (1 <<  5)  /*  IN Packet - Not Acknowledged      */
+N#define USBD_EVT_OUT_STALL   (1 <<  6)  /* OUT Packet - Stalled               */
+N#define USBD_EVT_IN_STALL    (1 <<  7)  /*  IN Packet - Stalled               */
+N#define USBD_EVT_OUT_DMA_EOT (1 <<  8)  /* DMA OUT EP - End of Transfer       */
+N#define USBD_EVT_IN_DMA_EOT  (1 <<  9)  /* DMA  IN EP - End of Transfer       */
+N#define USBD_EVT_OUT_DMA_NDR (1 << 10)  /* DMA OUT EP - New Descriptor Request*/
+N#define USBD_EVT_IN_DMA_NDR  (1 << 11)  /* DMA  IN EP - New Descriptor Request*/
+N#define USBD_EVT_OUT_DMA_ERR (1 << 12)  /* DMA OUT EP - Error                 */
+N#define USBD_EVT_IN_DMA_ERR  (1 << 13)  /* DMA  IN EP - Error                 */
+N
+N/* USB Device - Core Events                                                   */
+N#define USBD_EVT_SET_CFG     (1 <<  0)  /* Set Configuration                  */
+N#define USBD_EVT_SET_IF      (1 <<  1)  /* Set Interface                      */
+N#define USBD_EVT_SET_FEATURE (1 <<  2)  /* Set Feature                        */
+N#define USBD_EVT_CLR_FEATURE (1 <<  3)  /* Clear Feature                      */
+N
+N/* USB Device - Device Events Callback Pointers                               */
+Nextern void (* const USBD_P_Power_Event    )(BOOL power);
+Nextern void (* const USBD_P_Reset_Event    )(void);
+Nextern void (* const USBD_P_Suspend_Event  )(void);
+Nextern void (* const USBD_P_Resume_Event   )(void);
+Nextern void (* const USBD_P_WakeUp_Event   )(void);
+Nextern void (* const USBD_P_SOF_Event      )(void);
+Nextern void (* const USBD_P_Error_Event    )(U32 error);
+N
+N/* USB Device - Endpoint Events Callback Pointers                             */
+Nextern void (* const USBD_P_EP[16])         (U32 event);
+N
+N/* USB Device - Core Events Callback Pointers                                 */
+Nextern void (* const USBD_P_Configure_Event)(void);
+Nextern void (* const USBD_P_Interface_Event)(void);
+Nextern void (* const USBD_P_Feature_Event  )(void);
+N
+N/* USB Device - RTX version RTX tasks initialization                          */
+Nextern void USBD_RTX_TaskInit               (void);
+N
+N#endif  /* __USBD_EVENT_H__ */
+L 33 ".\USBStack\INC\usb.h" 2
+N#include "usbd_cdc_acm.h"
+L 1 ".\USBStack\INC\usbd_cdc_acm.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_CDC_ACM_H__
+N#define __USBD_CDC_ACM_H__
+N
+N
+N/*--------------------------- Event handling routines ------------------------*/
+N
+Nextern           void USBD_CDC_ACM_Reset_Event          (void);
+N
+Nextern           void USBD_CDC_ACM_SOF_Event            (void);
+N
+Nextern           void USBD_CDC_ACM_EP_INTIN_Event       (U32 event);
+Nextern           void USBD_CDC_ACM_EP_BULKIN_Event      (U32 event);
+Nextern           void USBD_CDC_ACM_EP_BULKOUT_Event     (U32 event);
+Nextern           void USBD_CDC_ACM_EP_BULK_Event        (U32 event);
+N
+Nextern    __task void USBD_RTX_CDC_ACM_EP_INTIN_Event   (void);
+Xextern    __declspec(noreturn) void USBD_RTX_CDC_ACM_EP_INTIN_Event   (void);
+Nextern    __task void USBD_RTX_CDC_ACM_EP_BULKIN_Event  (void);
+Xextern    __declspec(noreturn) void USBD_RTX_CDC_ACM_EP_BULKIN_Event  (void);
+Nextern    __task void USBD_RTX_CDC_ACM_EP_BULKOUT_Event (void);
+Xextern    __declspec(noreturn) void USBD_RTX_CDC_ACM_EP_BULKOUT_Event (void);
+Nextern    __task void USBD_RTX_CDC_ACM_EP_BULK_Event    (void);
+Xextern    __declspec(noreturn) void USBD_RTX_CDC_ACM_EP_BULK_Event    (void);
+N
+N
+N#endif  /* __USBD_CDC_ACM_H__ */
+L 34 ".\USBStack\INC\usb.h" 2
+N#include "usbd_hid.h"
+L 1 ".\USBStack\INC\usbd_hid.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_HID_H__
+N#define __USBD_HID_H__
+N
+N
+N/*--------------------------- Global constants -------------------------------*/
+N
+N/* USB HID Class API enumerated constants                                     */
+Nenum {
+N  USBD_HID_REQ_EP_CTRL = 0,             /* Request from control endpoint      */
+N  USBD_HID_REQ_EP_INT,                  /* Request from interrupt endpoint    */
+N  USBD_HID_REQ_PERIOD_UPDATE            /* Request from periodic update       */
+N};
+N
+N
+N/*--------------------------- Event handling routines ------------------------*/
+N
+Nextern        void USBD_HID_Configure_Event    (void);
+Nextern        void USBD_HID_SOF_Event          (void);
+N
+Nextern        void USBD_HID_EP_INTIN_Event     (U32 event);
+Nextern        void USBD_HID_EP_INTOUT_Event    (U32 event);
+Nextern        void USBD_HID_EP_INT_Event       (U32 event);
+N
+Nextern __task void USBD_RTX_HID_EP_INTIN_Event (void);
+Xextern __declspec(noreturn) void USBD_RTX_HID_EP_INTIN_Event (void);
+Nextern __task void USBD_RTX_HID_EP_INTOUT_Event(void);
+Xextern __declspec(noreturn) void USBD_RTX_HID_EP_INTOUT_Event(void);
+Nextern __task void USBD_RTX_HID_EP_INT_Event   (void);
+Xextern __declspec(noreturn) void USBD_RTX_HID_EP_INT_Event   (void);
+N
+N
+N#endif  /* __USBD_HID_H__ */
+L 35 ".\USBStack\INC\usb.h" 2
+N#include "usbd_msc.h"
+L 1 ".\USBStack\INC\usbd_msc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_MSC_H__
+N#define __USBD_MSC_H__
+N
+N
+N/*--------------------------- Global variables -------------------------------*/
+N
+N/* USB Device Mass Storage Device Class Global Variables */
+Nextern       BOOL USBD_MSC_MediaReady;
+Nextern       BOOL USBD_MSC_ReadOnly;
+Nextern       U32  USBD_MSC_MemorySize;
+Nextern       U32  USBD_MSC_BlockSize;
+Nextern       U32  USBD_MSC_BlockGroup;
+Nextern       U32  USBD_MSC_BlockCount;
+Nextern       U8  *USBD_MSC_BlockBuf;
+N
+N
+N/*--------------------------- Event handling routines ------------------------*/
+N
+Nextern        void USBD_MSC_EP_BULKIN_Event      (U32 event);
+Nextern        void USBD_MSC_EP_BULKOUT_Event     (U32 event);
+Nextern        void USBD_MSC_EP_BULK_Event        (U32 event);
+N
+Nextern __task void USBD_RTX_MSC_EP_BULKIN_Event  (void);
+Xextern __declspec(noreturn) void USBD_RTX_MSC_EP_BULKIN_Event  (void);
+Nextern __task void USBD_RTX_MSC_EP_BULKOUT_Event (void);
+Xextern __declspec(noreturn) void USBD_RTX_MSC_EP_BULKOUT_Event (void);
+Nextern __task void USBD_RTX_MSC_EP_BULK_Event    (void);
+Xextern __declspec(noreturn) void USBD_RTX_MSC_EP_BULK_Event    (void);
+N
+N
+N#endif  /* __USBD_MSC_H__ */
+L 36 ".\USBStack\INC\usb.h" 2
+N#include "usbd_hw.h"
+L 1 ".\USBStack\INC\usbd_hw.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_HW_H__
+N#define __USBD_HW_H__
+N
+N
+N/* USB Hardware Functions */
+Nextern void USBD_Init        (void);
+Nextern void USBD_Connect     (BOOL con);
+Nextern void USBD_Reset       (void);
+Nextern void USBD_Suspend     (void);
+Nextern void USBD_Resume      (void);
+Nextern void USBD_WakeUp      (void);
+Nextern void USBD_WakeUpCfg   (BOOL cfg);
+Nextern void USBD_SetAddress  (U32  adr, U32 setup);
+Nextern void USBD_Configure   (BOOL cfg);
+Nextern void USBD_ConfigEP    (USB_ENDPOINT_DESCRIPTOR *pEPD);
+Nextern void USBD_DirCtrlEP   (U32  dir);
+Nextern void USBD_EnableEP    (U32  EPNum);
+Nextern void USBD_DisableEP   (U32  EPNum);
+Nextern void USBD_ResetEP     (U32  EPNum);
+Nextern void USBD_SetStallEP  (U32  EPNum);
+Nextern void USBD_ClrStallEP  (U32  EPNum);
+Nextern void USBD_ClearEPBuf  (U32  EPNum);
+Nextern U32  USBD_ReadEP      (U32  EPNum, U8 *pData);
+Nextern U32  USBD_WriteEP     (U32  EPNum, U8 *pData, U32 cnt);
+Nextern U32  USBD_GetFrame    (void);
+Nextern U32  USBD_GetError    (void);
+N
+N#endif  /* __USBD_HW_H__ */
+L 37 ".\USBStack\INC\usb.h" 2
+N
+N#endif  /* __USB_H__ */
+L 25 ".\USBStack\INC\rl_usb.h" 2
+N
+N/*****************  Functions *************************************************/
+N
+N/* USB Device functions exported from USB Device Core module                  */
+Nextern void  usbd_init                  (void);
+Nextern void  usbd_connect               (BOOL con);
+Nextern void  usbd_reset_core            (void);
+Nextern BOOL  usbd_configured            (void);
+N
+N/* USB Device user functions imported to USB HID Class module                 */
+Nextern void  usbd_hid_init              (void);
+Nextern BOOL  usbd_hid_get_report_trigger(U8 rid,   U8 *buf, int len);
+Nextern int   usbd_hid_get_report        (U8 rtype, U8 rid, U8 *buf, U8  req);
+Nextern void  usbd_hid_set_report        (U8 rtype, U8 rid, U8 *buf, int len, U8 req);
+Nextern U8    usbd_hid_get_protocol      (void);
+Nextern void  usbd_hid_set_protocol      (U8 protocol);
+N
+N/* USB Device user functions imported to USB Mass Storage Class module        */
+Nextern void  usbd_msc_init              (void);
+Nextern void  usbd_msc_read_sect         (U32 block, U8 *buf, U32 num_of_blocks);
+Nextern void  usbd_msc_write_sect        (U32 block, U8 *buf, U32 num_of_blocks);
+Nextern void  usbd_msc_start_stop        (BOOL start);
+N
+N/* USB Device user functions imported to USB Audio Class module               */
+Nextern void  usbd_adc_init              (void);
+N
+N/* USB Device CDC ACM class functions called automatically by USBD Core module*/
+Nextern int32_t  USBD_CDC_ACM_Initialize                (void);
+Nextern int32_t  USBD_CDC_ACM_Uninitialize              (void);
+Nextern int32_t  USBD_CDC_ACM_Reset                     (void);
+N/* USB Device CDC ACM class user functions                                    */
+Nextern int32_t  USBD_CDC_ACM_PortInitialize            (void);
+Nextern int32_t  USBD_CDC_ACM_PortUninitialize          (void);
+Nextern int32_t  USBD_CDC_ACM_PortReset                 (void);
+Nextern int32_t  USBD_CDC_ACM_PortSetLineCoding         (CDC_LINE_CODING *line_coding);
+Nextern int32_t  USBD_CDC_ACM_PortGetLineCoding         (CDC_LINE_CODING *line_coding);
+Nextern int32_t  USBD_CDC_ACM_PortSetControlLineState   (uint16_t ctrl_bmp);
+Nextern int32_t  USBD_CDC_ACM_DataSend                  (const uint8_t *buf, int32_t len);
+Nextern int32_t  USBD_CDC_ACM_DataFree                  (void);
+Nextern int32_t  USBD_CDC_ACM_PutChar                   (const uint8_t  ch);
+Nextern int32_t  USBD_CDC_ACM_DataRead                  (      uint8_t *buf, int32_t len);
+Nextern int32_t  USBD_CDC_ACM_GetChar                   (void);
+Nextern int32_t  USBD_CDC_ACM_DataAvailable             (void);
+Nextern int32_t  USBD_CDC_ACM_Notify                    (uint16_t stat);
+N/* USB Device CDC ACM class overridable functions                             */
+Nextern int32_t  USBD_CDC_ACM_SendEncapsulatedCommand   (void);
+Nextern int32_t  USBD_CDC_ACM_GetEncapsulatedResponse   (void);
+Nextern int32_t  USBD_CDC_ACM_SetCommFeature            (uint16_t feat);
+Nextern int32_t  USBD_CDC_ACM_GetCommFeature            (uint16_t feat);
+Nextern int32_t  USBD_CDC_ACM_ClearCommFeature          (uint16_t feat);
+Nextern int32_t  USBD_CDC_ACM_SetLineCoding             (void);
+Nextern int32_t  USBD_CDC_ACM_GetLineCoding             (void);
+Nextern int32_t  USBD_CDC_ACM_SetControlLineState       (uint16_t ctrl_bmp);
+Nextern int32_t  USBD_CDC_ACM_SendBreak                 (uint16_t dur);
+N
+N/* USB Device user functions imported to USB Custom Class module              */
+Nextern void  usbd_cls_init              (void);
+Nextern void  usbd_cls_sof               (void);
+Nextern BOOL  usbd_cls_dev_req           (BOOL setup);
+Nextern BOOL  usbd_cls_if_req            (BOOL setup);
+Nextern BOOL  usbd_cls_ep_req            (BOOL setup);
+N
+N#ifdef __cplusplus
+S}
+N#endif
+N
+N#endif  /* __RL_USB_H__ */
+L 18 "USBStack\SRC\usbd_core_hid.c" 2
+N#include <string.h>
+L 1 "C:\Keil\ARM\ARMCC\bin\..\include\string.h" 1
+N/* string.h: ANSI 'C' (X3J11 Oct 88) library header, section 4.11 */
+N/* Copyright (C) Codemist Ltd., 1988-1993.                        */
+N/* Copyright 1991-1993 ARM Limited. All rights reserved.          */
+N/* version 0.04 */
+N
+N/*
+N * RCS $Revision: 178085 $
+N * Checkin $Date: 2012-12-11 14:54:17 +0000 (Tue, 11 Dec 2012) $
+N */
+N
+N/*
+N * string.h declares one type and several functions, and defines one macro
+N * useful for manipulating character arrays and other objects treated as
+N * character arrays. Various methods are used for determining the lengths of
+N * the arrays, but in all cases a char * or void * argument points to the
+N * initial (lowest addresses) character of the array. If an array is written
+N * beyond the end of an object, the behaviour is undefined.
+N */
+N
+N#ifndef __string_h
+N#define __string_h
+N#define __ARMCLIB_VERSION 5030076
+N
+N#define _ARMABI __declspec(__nothrow)
+N
+N  #ifndef __STRING_DECLS
+N  #define __STRING_DECLS
+N
+N    #undef __CLIBNS
+N
+N    #ifdef __cplusplus
+S        namespace std {
+S        #define __CLIBNS std::
+S        extern "C" {
+N    #else
+N      #define __CLIBNS
+N    #endif  /* __cplusplus */
+N
+N#if defined(__cplusplus) || !defined(__STRICT_ANSI__)
+X#if 0L || !0L
+N /* unconditional in C++ and non-strict C for consistency of debug info */
+N  typedef unsigned int size_t;
+N#elif !defined(__size_t)
+S  #define __size_t 1
+S  typedef unsigned int size_t;   /* see <stddef.h> */
+N#endif
+N
+N#undef NULL
+N#define NULL 0                   /* see <stddef.h> */
+N
+Nextern _ARMABI void *memcpy(void * __restrict /*s1*/,
+Xextern __declspec(__nothrow) void *memcpy(void * __restrict  ,
+N                    const void * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies n characters from the object pointed to by s2 into the object
+N    * pointed to by s1. If copying takes place between objects that overlap,
+N    * the behaviour is undefined.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI void *memmove(void * /*s1*/,
+Xextern __declspec(__nothrow) void *memmove(void *  ,
+N                    const void * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies n characters from the object pointed to by s2 into the object
+N    * pointed to by s1. Copying takes place as if the n characters from the
+N    * object pointed to by s2 are first copied into a temporary array of n
+N    * characters that does not overlap the objects pointed to by s1 and s2,
+N    * and then the n characters from the temporary array are copied into the
+N    * object pointed to by s1.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI char *strcpy(char * __restrict /*s1*/, const char * __restrict /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strcpy(char * __restrict  , const char * __restrict  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies the string pointed to by s2 (including the terminating nul
+N    * character) into the array pointed to by s1. If copying takes place
+N    * between objects that overlap, the behaviour is undefined.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI char *strncpy(char * __restrict /*s1*/, const char * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strncpy(char * __restrict  , const char * __restrict  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies not more than n characters (characters that follow a null
+N    * character are not copied) from the array pointed to by s2 into the array
+N    * pointed to by s1. If copying takes place between objects that overlap,
+N    * the behaviour is undefined.
+N    * Returns: the value of s1.
+N    */
+N
+Nextern _ARMABI char *strcat(char * __restrict /*s1*/, const char * __restrict /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strcat(char * __restrict  , const char * __restrict  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * appends a copy of the string pointed to by s2 (including the terminating
+N    * null character) to the end of the string pointed to by s1. The initial
+N    * character of s2 overwrites the null character at the end of s1.
+N    * Returns: the value of s1.
+N    */
+Nextern _ARMABI char *strncat(char * __restrict /*s1*/, const char * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strncat(char * __restrict  , const char * __restrict  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * appends not more than n characters (a null character and characters that
+N    * follow it are not appended) from the array pointed to by s2 to the end of
+N    * the string pointed to by s1. The initial character of s2 overwrites the
+N    * null character at the end of s1. A terminating null character is always
+N    * appended to the result.
+N    * Returns: the value of s1.
+N    */
+N
+N/*
+N * The sign of a nonzero value returned by the comparison functions is
+N * determined by the sign of the difference between the values of the first
+N * pair of characters (both interpreted as unsigned char) that differ in the
+N * objects being compared.
+N */
+N
+Nextern _ARMABI int memcmp(const void * /*s1*/, const void * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int memcmp(const void *  , const void *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the first n characters of the object pointed to by s1 to the
+N    * first n characters of the object pointed to by s2.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the object pointed to by s1 is greater than, equal to, or
+N    *          less than the object pointed to by s2.
+N    */
+Nextern _ARMABI int strcmp(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strcmp(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the string pointed to by s1 to the string pointed to by s2.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strncmp(const char * /*s1*/, const char * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strncmp(const char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares not more than n characters (characters that follow a null
+N    * character are not compared) from the array pointed to by s1 to the array
+N    * pointed to by s2.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strcasecmp(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strcasecmp(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the string pointed to by s1 to the string pointed to by s2,
+N    * case-insensitively as defined by the current locale.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strncasecmp(const char * /*s1*/, const char * /*s2*/, size_t /*n*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strncasecmp(const char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares not more than n characters (characters that follow a null
+N    * character are not compared) from the array pointed to by s1 to the array
+N    * pointed to by s2, case-insensitively as defined by the current locale.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2.
+N    */
+Nextern _ARMABI int strcoll(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) int strcoll(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * compares the string pointed to by s1 to the string pointed to by s2, both
+N    * interpreted as appropriate to the LC_COLLATE category of the current
+N    * locale.
+N    * Returns: an integer greater than, equal to, or less than zero, according
+N    *          as the string pointed to by s1 is greater than, equal to, or
+N    *          less than the string pointed to by s2 when both are interpreted
+N    *          as appropriate to the current locale.
+N    */
+N
+Nextern _ARMABI size_t strxfrm(char * __restrict /*s1*/, const char * __restrict /*s2*/, size_t /*n*/) __attribute__((__nonnull__(2)));
+Xextern __declspec(__nothrow) size_t strxfrm(char * __restrict  , const char * __restrict  , size_t  ) __attribute__((__nonnull__(2)));
+N   /*
+N    * transforms the string pointed to by s2 and places the resulting string
+N    * into the array pointed to by s1. The transformation function is such that
+N    * if the strcmp function is applied to two transformed strings, it returns
+N    * a value greater than, equal to or less than zero, corresponding to the
+N    * result of the strcoll function applied to the same two original strings.
+N    * No more than n characters are placed into the resulting array pointed to
+N    * by s1, including the terminating null character. If n is zero, s1 is
+N    * permitted to be a null pointer. If copying takes place between objects
+N    * that overlap, the behaviour is undefined.
+N    * Returns: The length of the transformed string is returned (not including
+N    *          the terminating null character). If the value returned is n or
+N    *          more, the contents of the array pointed to by s1 are
+N    *          indeterminate.
+N    */
+N
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const void *memchr(const void * /*s*/, int /*c*/, size_t /*n*/) __attribute__((__nonnull__(1)));
+Sextern "C++" void *memchr(void * __s, int __c, size_t __n) __attribute__((__nonnull__(1)));
+Sextern "C++" inline void *memchr(void * __s, int __c, size_t __n)
+S    { return const_cast<void *>(memchr(const_cast<const void *>(__s), __c, __n)); }
+N#else
+Nextern _ARMABI void *memchr(const void * /*s*/, int /*c*/, size_t /*n*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) void *memchr(const void *  , int  , size_t  ) __attribute__((__nonnull__(1)));
+N#endif
+N   /*
+N    * locates the first occurence of c (converted to an unsigned char) in the
+N    * initial n characters (each interpreted as unsigned char) of the object
+N    * pointed to by s.
+N    * Returns: a pointer to the located character, or a null pointer if the
+N    *          character does not occur in the object.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Sextern "C++" char *strchr(char * __s, int __c) __attribute__((__nonnull__(1)));
+Sextern "C++" inline char *strchr(char * __s, int __c)
+S    { return const_cast<char *>(strchr(const_cast<const char *>(__s), __c)); }
+N#else
+Nextern _ARMABI char *strchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) char *strchr(const char *  , int  ) __attribute__((__nonnull__(1)));
+N#endif
+N   /*
+N    * locates the first occurence of c (converted to an char) in the string
+N    * pointed to by s (including the terminating null character).
+N    * Returns: a pointer to the located character, or a null pointer if the
+N    *          character does not occur in the string.
+N    */
+N
+Nextern _ARMABI size_t strcspn(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strcspn(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * computes the length of the initial segment of the string pointed to by s1
+N    * which consists entirely of characters not from the string pointed to by
+N    * s2. The terminating null character is not considered part of s2.
+N    * Returns: the length of the segment.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strpbrk(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Sextern "C++" char *strpbrk(char * __s1, const char * __s2) __attribute__((__nonnull__(1,2)));
+Sextern "C++" inline char *strpbrk(char * __s1, const char * __s2)
+S    { return const_cast<char *>(strpbrk(const_cast<const char *>(__s1), __s2)); }
+N#else
+Nextern _ARMABI char *strpbrk(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strpbrk(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N#endif
+N   /*
+N    * locates the first occurence in the string pointed to by s1 of any
+N    * character from the string pointed to by s2.
+N    * Returns: returns a pointer to the character, or a null pointer if no
+N    *          character form s2 occurs in s1.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strrchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Sextern "C++" char *strrchr(char * __s, int __c) __attribute__((__nonnull__(1)));
+Sextern "C++" inline char *strrchr(char * __s, int __c)
+S    { return const_cast<char *>(strrchr(const_cast<const char *>(__s), __c)); }
+N#else
+Nextern _ARMABI char *strrchr(const char * /*s*/, int /*c*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) char *strrchr(const char *  , int  ) __attribute__((__nonnull__(1)));
+N#endif
+N   /*
+N    * locates the last occurence of c (converted to a char) in the string
+N    * pointed to by s. The terminating null character is considered part of
+N    * the string.
+N    * Returns: returns a pointer to the character, or a null pointer if c does
+N    *          not occur in the string.
+N    */
+N
+Nextern _ARMABI size_t strspn(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strspn(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * computes the length of the initial segment of the string pointed to by s1
+N    * which consists entirely of characters from the string pointed to by S2
+N    * Returns: the length of the segment.
+N    */
+N
+N#ifdef __cplusplus
+Sextern _ARMABI const char *strstr(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Sextern "C++" char *strstr(char * __s1, const char * __s2) __attribute__((__nonnull__(1,2)));
+Sextern "C++" inline char *strstr(char * __s1, const char * __s2)
+S    { return const_cast<char *>(strstr(const_cast<const char *>(__s1), __s2)); }
+N#else
+Nextern _ARMABI char *strstr(const char * /*s1*/, const char * /*s2*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) char *strstr(const char *  , const char *  ) __attribute__((__nonnull__(1,2)));
+N#endif
+N   /*
+N    * locates the first occurence in the string pointed to by s1 of the
+N    * sequence of characters (excluding the terminating null character) in the
+N    * string pointed to by s2.
+N    * Returns: a pointer to the located string, or a null pointer if the string
+N    *          is not found.
+N    */
+N
+Nextern _ARMABI char *strtok(char * __restrict /*s1*/, const char * __restrict /*s2*/) __attribute__((__nonnull__(2)));
+Xextern __declspec(__nothrow) char *strtok(char * __restrict  , const char * __restrict  ) __attribute__((__nonnull__(2)));
+Nextern _ARMABI char *_strtok_r(char * /*s1*/, const char * /*s2*/, char ** /*ptr*/) __attribute__((__nonnull__(2,3)));
+Xextern __declspec(__nothrow) char *_strtok_r(char *  , const char *  , char **  ) __attribute__((__nonnull__(2,3)));
+N#ifndef __STRICT_ANSI__
+Nextern _ARMABI char *strtok_r(char * /*s1*/, const char * /*s2*/, char ** /*ptr*/) __attribute__((__nonnull__(2,3)));
+Xextern __declspec(__nothrow) char *strtok_r(char *  , const char *  , char **  ) __attribute__((__nonnull__(2,3)));
+N#endif
+N   /*
+N    * A sequence of calls to the strtok function breaks the string pointed to
+N    * by s1 into a sequence of tokens, each of which is delimited by a
+N    * character from the string pointed to by s2. The first call in the
+N    * sequence has s1 as its first argument, and is followed by calls with a
+N    * null pointer as their first argument. The separator string pointed to by
+N    * s2 may be different from call to call.
+N    * The first call in the sequence searches for the first character that is
+N    * not contained in the current separator string s2. If no such character
+N    * is found, then there are no tokens in s1 and the strtok function returns
+N    * a null pointer. If such a character is found, it is the start of the
+N    * first token.
+N    * The strtok function then searches from there for a character that is
+N    * contained in the current separator string. If no such character is found,
+N    * the current token extends to the end of the string pointed to by s1, and
+N    * subsequent searches for a token will fail. If such a character is found,
+N    * it is overwritten by a null character, which terminates the current
+N    * token. The strtok function saves a pointer to the following character,
+N    * from which the next search for a token will start.
+N    * Each subsequent call, with a null pointer as the value for the first
+N    * argument, starts searching from the saved pointer and behaves as
+N    * described above.
+N    * Returns: pointer to the first character of a token, or a null pointer if
+N    *          there is no token.
+N    *
+N    * strtok_r() is a common extension which works exactly like
+N    * strtok(), but instead of storing its state in a hidden
+N    * library variable, requires the user to pass in a pointer to a
+N    * char * variable which will be used instead. Any sequence of
+N    * calls to strtok_r() passing the same char ** pointer should
+N    * behave exactly like the corresponding sequence of calls to
+N    * strtok(). This means that strtok_r() can safely be used in
+N    * multi-threaded programs, and also that you can tokenise two
+N    * strings in parallel.
+N    */
+N
+Nextern _ARMABI void *memset(void * /*s*/, int /*c*/, size_t /*n*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) void *memset(void *  , int  , size_t  ) __attribute__((__nonnull__(1)));
+N   /*
+N    * copies the value of c (converted to an unsigned char) into each of the
+N    * first n charactes of the object pointed to by s.
+N    * Returns: the value of s.
+N    */
+Nextern _ARMABI char *strerror(int /*errnum*/);
+Xextern __declspec(__nothrow) char *strerror(int  );
+N   /*
+N    * maps the error number in errnum to an error message string.
+N    * Returns: a pointer to the string, the contents of which are
+N    *          implementation-defined. The array pointed to shall not be
+N    *          modified by the program, but may be overwritten by a
+N    *          subsequent call to the strerror function.
+N    */
+Nextern _ARMABI size_t strlen(const char * /*s*/) __attribute__((__nonnull__(1)));
+Xextern __declspec(__nothrow) size_t strlen(const char *  ) __attribute__((__nonnull__(1)));
+N   /*
+N    * computes the length of the string pointed to by s.
+N    * Returns: the number of characters that precede the terminating null
+N    *          character.
+N    */
+N
+Nextern _ARMABI size_t strlcpy(char * /*dst*/, const char * /*src*/, size_t /*len*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strlcpy(char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * copies the string src into the string dst, using no more than
+N    * len bytes of dst. Always null-terminates dst _within the
+N    * length len (i.e. will copy at most len-1 bytes of string plus
+N    * a NUL), unless len is actually zero.
+N    * 
+N    * Return value is the length of the string that _would_ have
+N    * been written, i.e. the length of src. Thus, the operation
+N    * succeeded without truncation if and only if ret < len;
+N    * otherwise, the value in ret tells you how big to make dst if
+N    * you decide to reallocate it. (That value does _not_ include
+N    * the NUL.)
+N    * 
+N    * This is a BSD-derived library extension, which we are
+N    * permitted to declare in a standard header because ISO defines
+N    * function names beginning with 'str' as reserved for future
+N    * expansion of <string.h>.
+N    */
+N
+Nextern _ARMABI size_t strlcat(char * /*dst*/, const char * /*src*/, size_t /*len*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) size_t strlcat(char *  , const char *  , size_t  ) __attribute__((__nonnull__(1,2)));
+N   /*
+N    * concatenates the string src to the string dst, using no more
+N    * than len bytes of dst. Always null-terminates dst _within the
+N    * length len (i.e. will copy at most len-1 bytes of string plus
+N    * a NUL), unless len is actually zero.
+N    * 
+N    * Return value is the length of the string that _would_ have
+N    * been written, i.e. the length of src plus the original length
+N    * of dst. Thus, the operation succeeded without truncation if
+N    * and only if ret < len; otherwise, the value in ret tells you
+N    * how big to make dst if you decide to reallocate it. (That
+N    * value does _not_ include the NUL.)
+N    * 
+N    * If no NUL is encountered within the first len bytes of dst,
+N    * then the length of dst is considered to have been equal to
+N    * len for the purposes of the return value (as if there were a
+N    * NUL at dst[len]). Thus, the return value in this case is len
+N    * + strlen(src).
+N    * 
+N    * This is a BSD-derived library extension, which we are
+N    * permitted to declare in a standard header because ISO defines
+N    * function names beginning with 'str' as reserved for future
+N    * expansion of <string.h>.
+N    */
+N
+Nextern _ARMABI void _membitcpybl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpybl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpybb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpybb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpyhl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpyhl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpyhb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpyhb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpywl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpywl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitcpywb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitcpywb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovebl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovebl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovebb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovebb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovehl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovehl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovehb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovehb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovewl(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovewl(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+Nextern _ARMABI void _membitmovewb(void * /*dest*/, const void * /*src*/, int /*destoffset*/, int /*srcoffset*/, size_t /*nbits*/) __attribute__((__nonnull__(1,2)));
+Xextern __declspec(__nothrow) void _membitmovewb(void *  , const void *  , int  , int  , size_t  ) __attribute__((__nonnull__(1,2)));
+N    /*
+N     * Copies or moves a piece of memory from one place to another,
+N     * with one-bit granularity. So you can start or finish a copy
+N     * part way through a byte, and you can copy between regions
+N     * with different alignment within a byte.
+N     * 
+N     * All these functions have the same prototype: two void *
+N     * pointers for destination and source, then two integers
+N     * giving the bit offset from those pointers, and finally the
+N     * number of bits to copy.
+N     * 
+N     * Just like memcpy and memmove, the "cpy" functions copy as
+N     * fast as they can in the assumption that the memory regions
+N     * do not overlap, while the "move" functions cope correctly
+N     * with overlap.
+N     *
+N     * Treating memory as a stream of individual bits requires
+N     * defining a convention about what order those bits are
+N     * considered to be arranged in. The above functions support
+N     * multiple conventions:
+N     * 
+N     *  - the "bl" functions consider the unit of memory to be the
+N     *    byte, and consider the bits within each byte to be
+N     *    arranged in little-endian fashion, so that the LSB comes
+N     *    first. (For example, membitcpybl(a,b,0,7,1) would copy
+N     *    the MSB of the byte at b to the LSB of the byte at a.)
+N     * 
+N     *  - the "bb" functions consider the unit of memory to be the
+N     *    byte, and consider the bits within each byte to be
+N     *    arranged in big-endian fashion, so that the MSB comes
+N     *    first.
+N     * 
+N     *  - the "hl" functions consider the unit of memory to be the
+N     *    16-bit halfword, and consider the bits within each word
+N     *    to be arranged in little-endian fashion.
+N     * 
+N     *  - the "hb" functions consider the unit of memory to be the
+N     *    16-bit halfword, and consider the bits within each word
+N     *    to be arranged in big-endian fashion.
+N     * 
+N     *  - the "wl" functions consider the unit of memory to be the
+N     *    32-bit word, and consider the bits within each word to be
+N     *    arranged in little-endian fashion.
+N     * 
+N     *  - the "wb" functions consider the unit of memory to be the
+N     *    32-bit word, and consider the bits within each word to be
+N     *    arranged in big-endian fashion.
+N     */
+N
+N    #ifdef __cplusplus
+S         }  /* extern "C" */
+S      }  /* namespace std */
+N    #endif /* __cplusplus */
+N  #endif /* __STRING_DECLS */
+N
+N  #ifdef __cplusplus
+S    #ifndef __STRING_NO_EXPORTS
+S      using ::std::size_t;
+S      using ::std::memcpy;
+S      using ::std::memmove;
+S      using ::std::strcpy;
+S      using ::std::strncpy;
+S      using ::std::strcat;
+S      using ::std::strncat;
+S      using ::std::memcmp;
+S      using ::std::strcmp;
+S      using ::std::strncmp;
+S      using ::std::strcasecmp;
+S      using ::std::strncasecmp;
+S      using ::std::strcoll;
+S      using ::std::strxfrm;
+S      using ::std::memchr;
+S      using ::std::strchr;
+S      using ::std::strcspn;
+S      using ::std::strpbrk;
+S      using ::std::strrchr;
+S      using ::std::strspn;
+S      using ::std::strstr;
+S      using ::std::strtok;
+S#ifndef __STRICT_ANSI__
+S      using ::std::strtok_r;
+S#endif
+S      using ::std::_strtok_r;
+S      using ::std::memset;
+S      using ::std::strerror;
+S      using ::std::strlen;
+S      using ::std::strlcpy;
+S      using ::std::strlcat;
+S      using ::std::_membitcpybl;
+S      using ::std::_membitcpybb;
+S      using ::std::_membitcpyhl;
+S      using ::std::_membitcpyhb;
+S      using ::std::_membitcpywl;
+S      using ::std::_membitcpywb;
+S      using ::std::_membitmovebl;
+S      using ::std::_membitmovebb;
+S      using ::std::_membitmovehl;
+S      using ::std::_membitmovehb;
+S      using ::std::_membitmovewl;
+S      using ::std::_membitmovewb;
+S    #endif /* __STRING_NO_EXPORTS */
+N  #endif /* __cplusplus */
+N
+N#endif
+N
+N/* end of string.h */
+N
+L 19 "USBStack\SRC\usbd_core_hid.c" 2
+N#include "usb_for_lib.h"
+L 1 ".\USBStack\INC\usb_for_lib.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USB_FOR_LIB_H__
+N#define __USB_FOR_LIB_H__
+N
+N/* USB Device header files                                                    */
+N#include "usbd_lib_cdc.h"
+L 1 ".\USBStack\INC\usbd_lib_cdc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_LIB_CDC_H__
+N#define __USBD_LIB_CDC_H__
+N
+N
+N/*--------------------------- USB Requests -----------------------------------*/
+N
+Nextern int32_t USBD_CDC_ACM_SendEncapsulatedCommand (void);
+Nextern int32_t USBD_CDC_ACM_GetEncapsulatedResponse (void);
+Nextern int32_t USBD_CDC_ACM_SetCommFeature          (uint16_t feat);
+Nextern int32_t USBD_CDC_ACM_GetCommFeature          (uint16_t feat);
+Nextern int32_t USBD_CDC_ACM_ClearCommFeature        (uint16_t feat);
+Nextern int32_t USBD_CDC_ACM_SetLineCoding           (void);
+Nextern int32_t USBD_CDC_ACM_GetLineCoding           (void);
+Nextern int32_t USBD_CDC_ACM_SetControlLineState     (uint16_t ctrl_bmp);
+Nextern int32_t USBD_CDC_ACM_SendBreak               (uint16_t dur);
+N
+N
+N#endif  /* __USBD_LIB_CDC_H__ */
+L 21 ".\USBStack\INC\usb_for_lib.h" 2
+N#include "usbd_lib_hid.h"
+L 1 ".\USBStack\INC\usbd_lib_hid.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_LIB_HID_H__
+N#define __USBD_LIB_HID_H__
+N
+N
+N/*--------------------------- USB Requests -----------------------------------*/
+N
+Nextern BOOL USBD_HID_GetReport   (void);
+Nextern BOOL USBD_HID_SetReport   (void);
+Nextern BOOL USBD_HID_GetIdle     (void);
+Nextern BOOL USBD_HID_SetIdle     (void);
+Nextern BOOL USBD_HID_GetProtocol (void);
+Nextern BOOL USBD_HID_SetProtocol (void);
+N
+N
+N#endif  /* __USBD_LIB_HID_H__ */
+L 22 ".\USBStack\INC\usb_for_lib.h" 2
+N#include "usbd_lib_msc.h"
+L 1 ".\USBStack\INC\usbd_lib_msc.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USBD_LIB_MSC_H__
+N#define __USBD_LIB_MSC_H__
+N
+N
+N/*--------------------------- USB Requests -----------------------------------*/
+N
+Nextern void USBD_MSC_ClrStallEP(U32 EPNum);
+Nextern BOOL USBD_MSC_Reset     (void);
+Nextern BOOL USBD_MSC_GetMaxLUN (void);
+Nextern void USBD_MSC_GetCBW    (void);
+Nextern void USBD_MSC_SetCSW    (void);
+N
+N
+N#endif  /* __USBD_LIB_MSC_H__ */
+L 23 ".\USBStack\INC\usb_for_lib.h" 2
+N
+N/* USB System Configuration header file                                       */
+N#include "usb_lib.h"
+L 1 ".\USBStack\INC\usb_lib.h" 1
+N/* CMSIS-DAP Interface Firmware
+N * Copyright (c) 2009-2013 ARM Limited
+N *
+N * Licensed under the Apache License, Version 2.0 (the "License");
+N * you may not use this file except in compliance with the License.
+N * You may obtain a copy of the License at
+N *
+N *     http://www.apache.org/licenses/LICENSE-2.0
+N *
+N * Unless required by applicable law or agreed to in writing, software
+N * distributed under the License is distributed on an "AS IS" BASIS,
+N * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+N * See the License for the specific language governing permissions and
+N * limitations under the License.
+N */
+N#ifndef __USB_LIB_H__
+N#define __USB_LIB_H__
+N
+N/*------------------------------------------------------------------------------
+N *           USB Device Configuration
+N *----------------------------------------------------------------------------*/
+Nextern       U8   USBD_AltSetting[];
+Nextern       U8   USBD_EP0Buf[];
+Nextern const U8   usbd_power;
+Nextern const U8   usbd_hs_enable;
+Nextern const U16  usbd_if_num;
+Nextern const U8   usbd_ep_num;
+Nextern const U8   usbd_max_packet0;
+N
+N
+N/*------------------------------------------------------------------------------
+N *           USB Device Class Configuration
+N *----------------------------------------------------------------------------*/
+Nextern const U8   usbd_hid_enable;
+Nextern const U8   usbd_hid_if_num;
+Nextern const U8   usbd_hid_ep_intin;
+Nextern const U8   usbd_hid_ep_intout;
+Nextern const U16  usbd_hid_interval     [2];
+Nextern const U16  usbd_hid_maxpacketsize[2];
+Nextern const U8   usbd_hid_inreport_num;
+Nextern const U8   usbd_hid_outreport_num;
+Nextern const U16  usbd_hid_inreport_max_sz;
+Nextern const U16  usbd_hid_outreport_max_sz;
+Nextern const U16  usbd_hid_featreport_max_sz;
+Nextern       U16  USBD_HID_PollingCnt;
+Nextern       U16  USBD_HID_PollingReload[];
+Nextern       U8   USBD_HID_IdleCnt      [];
+Nextern       U8   USBD_HID_IdleReload   [];
+Nextern       U8   USBD_HID_IdleSet      [];
+Nextern       U8   USBD_HID_InReport     [];
+Nextern       U8   USBD_HID_OutReport    [];
+Nextern       U8   USBD_HID_FeatReport   [];
+N
+Nextern const U8   usbd_msc_enable;
+Nextern const U8   usbd_msc_if_num;
+Nextern const U8   usbd_msc_ep_bulkin;
+Nextern const U8   usbd_msc_ep_bulkout;
+Nextern const U16  usbd_msc_maxpacketsize[2];
+Nextern const U8  *usbd_msc_inquiry_data;
+Nextern       U8   USBD_MSC_BulkBuf      [];
+N
+Nextern const U8   usbd_adc_enable;
+Nextern const U8   usbd_adc_cif_num;
+Nextern const U8   usbd_adc_sif1_num;
+Nextern const U8   usbd_adc_sif2_num;
+Nextern const U8   usbd_adc_ep_isoout;
+Nextern const U32  usbd_adc_cfg_datafreq;
+Nextern const U32  usbd_adc_cfg_p_s;
+Nextern const U32  usbd_adc_cfg_p_c;
+Nextern const U32  usbd_adc_cfg_b_s;
+Nextern       S16  USBD_ADC_DataBuf      [];
+N
+Nextern const U8   usbd_cdc_acm_enable;
+Nextern const U8   usbd_cdc_acm_cif_num;
+Nextern const U8   usbd_cdc_acm_dif_num;
+Nextern const U8   usbd_cdc_acm_bufsize;
+Nextern const U8   usbd_cdc_acm_ep_intin;
+Nextern const U8   usbd_cdc_acm_ep_bulkin;
+Nextern const U8   usbd_cdc_acm_ep_bulkout;
+Nextern const U16  usbd_cdc_acm_sendbuf_sz;
+Nextern const U16  usbd_cdc_acm_receivebuf_sz;
+Nextern const U16  usbd_cdc_acm_maxpacketsize [2];
+Nextern const U16  usbd_cdc_acm_maxpacketsize1[2];
+Nextern        U8  USBD_CDC_ACM_SendBuf       [];
+Nextern        U8  USBD_CDC_ACM_ReceiveBuf    [];
+Nextern        U8  USBD_CDC_ACM_NotifyBuf     [10];
+N
+Nextern       void usbd_os_evt_set       (U16 event_flags, U32 task);
+Nextern       U16  usbd_os_evt_get       (void);
+Nextern       U32  usbd_os_evt_wait_or   (U16 wait_flags, U16 timeout);
+N
+Nextern const BOOL __rtx;
+N
+N
+N/*------------------------------------------------------------------------------
+N *      USB Device Descriptors
+N *----------------------------------------------------------------------------*/
+Nextern const U8   USBD_HID_ReportDescriptor[];
+Nextern const U16  USBD_HID_ReportDescriptorSize;
+Nextern const U16  USBD_HID_DescriptorOffset;
+Nextern const U8   USBD_DeviceDescriptor[];
+Nextern const U8   USBD_DeviceQualifier[];
+Nextern const U8   USBD_DeviceQualifier_HS[];
+Nextern const U8   USBD_ConfigDescriptor[];
+Nextern const U8   USBD_ConfigDescriptor_HS[];
+Nextern const U8   USBD_OtherSpeedConfigDescriptor[];
+Nextern const U8   USBD_OtherSpeedConfigDescriptor_HS[];
+Nextern const U8   USBD_OtherSpeedConfigDescriptor[];
+Nextern const U8   USBD_OtherSpeedConfigDescriptor_HS[];
+Nextern const U8   USBD_StringDescriptor[];
+N
+N#endif  /* __USB_LIB_H__ */
+L 26 ".\USBStack\INC\usb_for_lib.h" 2
+N
+N#endif  /* __USB_FOR_LIB_H__ */
+L 20 "USBStack\SRC\usbd_core_hid.c" 2
+N
+N
+N/*
+N *  Get Descriptor USB Device Request - HID specific handling
+N *    Parameters:      None
+N *    Return Value:    TRUE - Success, FALSE - Error
+N */
+N
+N__weak BOOL USBD_ReqGetDescriptor_HID (U8 **pD, U32 *len) {
+N  switch (USBD_SetupPacket.wValueH) {
+N    case HID_HID_DESCRIPTOR_TYPE:
+X    case 0x21:
+N      if (USBD_SetupPacket.wIndexL != usbd_hid_if_num) {
+N        return (__FALSE);  /* Only Single HID Interface is supported */
+X        return (0);   
+N      }
+N      if ((!usbd_hs_enable) && (USBD_HighSpeed == __TRUE)) {
+X      if ((!usbd_hs_enable) && (USBD_HighSpeed == 1)) {
+N        return (__FALSE);  /* High speed request but high-speed not enabled */
+X        return (0);   
+N      }
+N      if (USBD_HighSpeed == __FALSE) {
+X      if (USBD_HighSpeed == 0) {
+N        *pD = (U8 *)USBD_ConfigDescriptor;
+N      } else {
+N        *pD = (U8 *)USBD_ConfigDescriptor_HS;
+N      }
+N      USBD_EP0Data.pData = *pD + USBD_HID_DescriptorOffset;
+N      *len = USB_HID_DESC_SIZE;
+X      *len = (sizeof(HID_DESCRIPTOR));
+N      break;
+N    case HID_REPORT_DESCRIPTOR_TYPE:
+X    case 0x22:
+N      if (USBD_SetupPacket.wIndexL != usbd_hid_if_num) {
+N        return (__FALSE);  /* Only Single HID Interface is supported */
+X        return (0);   
+N      }
+N      USBD_EP0Data.pData = (U8 *)USBD_HID_ReportDescriptor;
+N      *len = USBD_HID_ReportDescriptorSize;
+N      break;
+N    case HID_PHYSICAL_DESCRIPTOR_TYPE:
+X    case 0x23:
+N      return (__FALSE);    /* HID Physical Descriptor is not supported */
+X      return (0);     
+N    default:
+N      return (__FALSE);
+X      return (0);
+N  }
+N  return (__TRUE);
+X  return (1);
+N}
+N
+N
+N/*
+N *  USB Device Endpoint 0 Event Callback - HID specific handling (Setup Request To Interface)
+N *    Parameters:      none
+N *    Return Value:    TRUE - Setup class request ok, FALSE - Setup class request not supported
+N */
+N
+N__weak BOOL USBD_EndPoint0_Setup_HID_ReqToIF (void) {
+N  if (USBD_SetupPacket.wIndexL == usbd_hid_if_num) {         /* IF number correct? */
+N    switch (USBD_SetupPacket.bRequest) {
+N      case HID_REQUEST_GET_REPORT:
+X      case 0x01:
+N        if (USBD_HID_GetReport()) {
+N          if (USBD_SetupPacket.wValueH == HID_REPORT_INPUT) {
+X          if (USBD_SetupPacket.wValueH == 0x01) {
+N            USBD_EP0Data.pData = &USBD_HID_InReport[1];      /* point to data to be sent (skip ReportID) */
+N          }
+N          else if (USBD_SetupPacket.wValueH == HID_REPORT_FEATURE) {
+X          else if (USBD_SetupPacket.wValueH == 0x03) {
+N            USBD_EP0Data.pData = &USBD_HID_FeatReport[1];    /* point to data to be sent (skip ReportID) */
+N          }
+N          USBD_DataInStage();                                /* send requested data */
+N          return (__TRUE);
+X          return (1);
+N        }
+N        break;
+N      case HID_REQUEST_SET_REPORT:
+X      case 0x09:
+N        if (USBD_SetupPacket.wValueH == HID_REPORT_OUTPUT) {
+X        if (USBD_SetupPacket.wValueH == 0x02) {
+N          USBD_EP0Data.pData = &USBD_HID_OutReport[1];       /* out data to be received (skip ReportID) */
+N        }
+N        else if (USBD_SetupPacket.wValueH == HID_REPORT_FEATURE) {
+X        else if (USBD_SetupPacket.wValueH == 0x03) {
+N          USBD_EP0Data.pData = &USBD_HID_FeatReport[1];      /* out data to be received (skip ReportID) */
+N        }
+N        return (__TRUE);
+X        return (1);
+N      case HID_REQUEST_GET_IDLE:
+X      case 0x02:
+N        if (USBD_HID_GetIdle()) {
+N          USBD_EP0Data.pData = USBD_EP0Buf;                  /* point to data to be sent */
+N          USBD_DataInStage();                                /* send requested data */
+N          return (__TRUE);
+X          return (1);
+N        }
+N        break;
+N      case HID_REQUEST_SET_IDLE:
+X      case 0x0A:
+N        if (USBD_HID_SetIdle()) {
+N          USBD_StatusInStage();                              /* send Acknowledge */
+N          return (__TRUE);
+X          return (1);
+N        }
+N        break;
+N      case HID_REQUEST_GET_PROTOCOL:
+X      case 0x03:
+N        if (USBD_HID_GetProtocol()) {
+N          USBD_EP0Data.pData = USBD_EP0Buf;                  /* point to data to be sent */
+N          USBD_DataInStage();                                /* send requested data */
+N          return (__TRUE);
+X          return (1);
+N        }
+N        break;
+N      case HID_REQUEST_SET_PROTOCOL:
+X      case 0x0B:
+N        if (USBD_HID_SetProtocol()) {
+N          USBD_StatusInStage();                              /* send Acknowledge */
+N          return (__TRUE);
+X          return (1);
+N        }
+N        break;
+N    }
+N  }
+N  return (__FALSE);
+X  return (0);
+N}
+N
+N
+N/*
+N *  USB Device Endpoint 0 Event Callback - HID specific handling (Out Request To Interface)
+N *    Parameters:      none
+N *    Return Value:    TRUE - Out class request ok, FALSE - Out class request not supported
+N */
+N
+N__weak BOOL USBD_EndPoint0_Out_HID_ReqToIF (void) {
+N  if (USBD_SetupPacket.wIndexL == usbd_hid_if_num) {   /* IF number correct? */
+N    switch (USBD_SetupPacket.bRequest) {
+N      case HID_REQUEST_SET_REPORT:
+X      case 0x09:
+N        if (USBD_HID_SetReport()) {
+N          USBD_StatusInStage();                        /* send Acknowledge */
+N          return (__TRUE);
+X          return (1);
+N        }
+N        break;
+N    }
+N  }
+N  return (__FALSE);
+X  return (0);
+N}

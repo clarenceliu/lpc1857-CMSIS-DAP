@@ -1,0 +1,22 @@
+The HID project is a demo program for the Keil MCB1800 Board
+
+It demonstrates an USB HID (Human Interface Device):
+  - 8 LEDs
+  - 4 BUTTONs (P4_0, P4_3, P4_4,WAKEUP)
+
+The USB HID is recognized by the host PC running Windows
+which will load a generic HID driver. The board LEDs
+and Push Buttons can then be accessed from the PC
+through a custom HID Client Program.
+
+The HID program is available for the following target:
+  LPC1857_USB0 Flash:          configured for internal Flash
+                              (used for production or target debugging)
+  LPC1850_USB0 Ext. Flash:     configured for external Flash ROM
+                               because of performance reasons, USB routines
+                               are running from RAM,
+                              (used for production or target debugging)
+  LPC1857_USB1 Flash:          configured for internal Flash
+                              (used for production or target debugging)
+  LPC1850_USB1 Ext. Flash:     configured for external Flash ROM
+                              (used for production or target debugging)

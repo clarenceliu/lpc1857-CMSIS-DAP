@@ -1,0 +1,15 @@
+.\obj\swd_host.o: app\swd_host.c
+.\obj\swd_host.o: app\target_flash.h
+.\obj\swd_host.o: app\target_struct.h
+.\obj\swd_host.o: C:\Keil\ARM\ARMCC\bin\..\include\stdint.h
+.\obj\swd_host.o: app\swd_host.h
+.\obj\swd_host.o: app\target_reset.h
+.\obj\swd_host.o: app\debug_cm.h
+.\obj\swd_host.o: app\DAP_config.h
+.\obj\swd_host.o: C:\Keil\ARM\Inc\NXP\LPC18xx\LPC18xx.h
+.\obj\swd_host.o: C:\Keil\ARM\CMSIS\Include\core_cm3.h
+.\obj\swd_host.o: C:\Keil\ARM\CMSIS\Include\core_cmInstr.h
+.\obj\swd_host.o: C:\Keil\ARM\CMSIS\Include\core_cmFunc.h
+.\obj\swd_host.o: C:\Keil\ARM\Inc\NXP\LPC18xx\system_LPC18xx.h
+.\obj\swd_host.o: app\DAP.h
+.\obj\swd_host.o: C:\Keil\ARM\ARMCC\bin\..\include\stddef.h

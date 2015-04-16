@@ -1,0 +1,10 @@
+.\obj\glcd_lpc18xx.o: GLCD_LPC18xx.c
+.\obj\glcd_lpc18xx.o: C:\Keil\ARM\Inc\NXP\LPC18xx\LPC18xx.h
+.\obj\glcd_lpc18xx.o: C:\Keil\ARM\CMSIS\Include\core_cm3.h
+.\obj\glcd_lpc18xx.o: C:\Keil\ARM\ARMCC\bin\..\include\stdint.h
+.\obj\glcd_lpc18xx.o: C:\Keil\ARM\CMSIS\Include\core_cmInstr.h
+.\obj\glcd_lpc18xx.o: C:\Keil\ARM\CMSIS\Include\core_cmFunc.h
+.\obj\glcd_lpc18xx.o: C:\Keil\ARM\Inc\NXP\LPC18xx\system_LPC18xx.h
+.\obj\glcd_lpc18xx.o: GLCD.h
+.\obj\glcd_lpc18xx.o: Font_6x8_h.h
+.\obj\glcd_lpc18xx.o: Font_16x24_h.h

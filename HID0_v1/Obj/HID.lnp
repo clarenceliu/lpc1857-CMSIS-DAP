@@ -1,0 +1,19 @@
+--cpu Cortex-M3
+".\obj\startup_lpc18xx.o"
+".\obj\system_lpc18xx.o"
+".\obj\usb_config_usb0.o"
+".\obj\usbd_lpc18xx_usb0.o"
+".\obj\glcd_lpc18xx.o"
+".\obj\led_lpc18xx.o"
+".\obj\kbd_lpc18xx.o"
+".\obj\dap.o"
+".\obj\usbd_user_hid.o"
+".\obj\usbd_demo.o"
+".\obj\sw_dp.o"
+".\obj\usbd_core.o"
+".\obj\usbd_core_hid.o"
+".\obj\usbd_hid.o"
+--library_type=microlib --strict --scatter ".\Obj\HID.sct"
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Lst\HID.map" -o .\Obj\HID.axf
